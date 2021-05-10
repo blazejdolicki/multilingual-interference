@@ -106,8 +106,8 @@ venv.bak/
 
 # Project specific
 /.idea/
-/data/
-/logs/
+*/data/
+*/logs/
 /tmp/
 notebooks/bertviz/
 /.vscode

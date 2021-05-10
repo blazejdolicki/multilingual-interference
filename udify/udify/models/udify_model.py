@@ -188,6 +188,8 @@ class UdifyModel(Model):
         return output_dict
 
     def _apply_token_dropout(self, tokens):
+        print("apply token dropout", type(tokens))
+        print(tokens)
         # Word dropout
         if "tokens" in tokens:
             oov_token = self.vocab.get_token_index(self.vocab._oov_token)
@@ -234,6 +236,8 @@ class UdifyModel(Model):
         :param training: Applies the dropout if set to ``True``
         :return: A copy of the input batch with token dropout applied
         """
+        print("tokens", type(tokens))
+        print(tokens)
         if training and p > 0:
             # Ensure that the tensors run on the same device
             device = tokens.device

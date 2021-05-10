@@ -144,9 +144,7 @@
   "data_loader": {
     "batch_sampler": {
       "type": "bucket",
-      "batch_size": 32,
-      "sorting_keys": [["tokens", "num_tokens"]],
-      "biggest_batch_first": true
+      "batch_size": 32
     }
   },
   "trainer": {
@@ -163,10 +161,6 @@
     "num_epochs": 50,
     "patience": 50,
     "validation_metric": "+.run/.sum",
-    "should_log_learning_rate": false,
-    "should_log_parameter_statistics": false,
-    "summary_interval": 500,
-    "num_serialized_models_to_keep": 1,
     "grad_norm": 5.0,
     "grad_clipping": 10.0,
     "cuda_device": 0

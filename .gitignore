@@ -112,4 +112,4 @@ venv.bak/
 notebooks/bertviz/
 /.vscode
 
-*.out
+slurm_output_*.out

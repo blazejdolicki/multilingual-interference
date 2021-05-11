@@ -111,7 +111,7 @@ class UdifyModel(Model):
             kwargs.pop("track_epoch")
 
         gold_tags = kwargs
-
+        
         if "tokens" in self.tasks:
             # Model is predicting tokens, so add them to the gold tags
             gold_tags["tokens"] = tokens["tokens"]
@@ -146,6 +146,7 @@ class UdifyModel(Model):
 
             if task == "deps":
                 tag_logits = logits["upos"] if "upos" in logits else None
+                
                 pred_output = self.decoders[task](
                     decoder_input,
                     mask,
@@ -188,14 +189,12 @@ class UdifyModel(Model):
         return output_dict
 
     def _apply_token_dropout(self, tokens):
-        print("apply token dropout", type(tokens))
-        print(tokens)
         # Word dropout
         if "tokens" in tokens:
             oov_token = self.vocab.get_token_index(self.vocab._oov_token)
             ignore_tokens = [self.vocab.get_token_index(self.vocab._padding_token)]
-            tokens["tokens"] = self.token_dropout(
-                tokens["tokens"],
+            tokens["tokens"]["tokens"] = self.token_dropout(
+                tokens["tokens"]["tokens"],
                 oov_token=oov_token,
                 padding_tokens=ignore_tokens,
                 p=self.word_dropout,
@@ -210,8 +209,8 @@ class UdifyModel(Model):
                 self.bert_vocab["[CLS]"],
                 self.bert_vocab["[SEP]"],
             ]
-            tokens["bert"] = self.token_dropout(
-                tokens["bert"],
+            tokens["bert"]["bert"] = self.token_dropout(
+                tokens["bert"]["bert"],
                 oov_token=oov_token,
                 padding_tokens=ignore_tokens,
                 p=self.word_dropout,
@@ -236,8 +235,6 @@ class UdifyModel(Model):
         :param training: Applies the dropout if set to ``True``
         :return: A copy of the input batch with token dropout applied
         """
-        print("tokens", type(tokens))
-        print(tokens)
         if training and p > 0:
             # Ensure that the tensors run on the same device
             device = tokens.device

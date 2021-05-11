@@ -196,6 +196,7 @@ class DependencyDecoder(Model):
             predicted_heads, predicted_head_tags = self._mst_decode(
                 head_tag_representation, child_tag_representation, attended_arcs, mask
             )
+            predicted_heads, predicted_head_tags = predicted_heads.to(head_tag_representation.device), predicted_head_tags.to(head_tag_representation.device)
         if head_indices is not None and head_tags is not None:
 
             arc_nll, tag_nll = self._construct_loss(
@@ -212,6 +213,7 @@ class DependencyDecoder(Model):
             # We calculate attachment scores for the whole sentence
             # but excluding the symbolic ROOT token at the start,
             # which is why we start from the second element in the sequence.
+            
             self._attachment_scores(
                 predicted_heads[:, 1:],
                 predicted_head_tags[:, 1:],
@@ -219,6 +221,7 @@ class DependencyDecoder(Model):
                 head_tags[:, 1:],
                 evaluation_mask,
             )
+              
         else:
             arc_nll, tag_nll = self._construct_loss(
                 head_tag_representation=head_tag_representation,
@@ -392,7 +395,7 @@ class DependencyDecoder(Model):
         )
         # Mask padded tokens, because we only want to consider actual words as heads.
         if mask is not None:
-            minus_mask = (1 - mask).bool().unsqueeze(2)
+            minus_mask = ~mask.unsqueeze(2)
             attended_arcs.masked_fill_(minus_mask, -numpy.inf)
 
         # Compute the heads greedily.

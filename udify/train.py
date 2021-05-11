@@ -71,7 +71,7 @@ import_module_and_submodules("udify")
 try:
     # commented this based on Anna's code
     # util.cache_vocab(train_params)
-    train_model(train_params, serialization_dir, recover=bool(args.resume))
+    train_model(train_params, serialization_dir, recover=bool(args.resume), file_friendly_logging=True)
 except KeyboardInterrupt:
     logger.warning("KeyboardInterrupt, skipping training")
 

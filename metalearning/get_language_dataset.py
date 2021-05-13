@@ -180,7 +180,7 @@ def get_language_dataset(
     from allennlp.data import allennlp_collate
     # Construct a dataloader directly for a dataset which contains allennlp
     # Instances which have _already_ been indexed.
-    my_loader = DataLoader(raw_train_generator, batch_size=1, collate_fn=allennlp_collate)
+    my_loader = DataLoader(raw_train_generator, batch_size=support_set_size, collate_fn=allennlp_collate)
     # groups = lazy_groups_of(my_loader
 # , 1)# -R hardcoded batch of size 1?
     return my_loader

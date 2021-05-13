@@ -93,14 +93,14 @@ def main():
     SKIP_UPDATE = args.skip_update
 
     # Filenames
-    MODEL_FILE = ( "logs/bert_finetune_en/2021.05.13_01.56.30"
-        # args.model_dir
-        # if args.model_dir is not None
-        # else (
-        #     "../backup/pretrained/english_expmix_deps_seed2/2020.07.30_18.50.07"
-        #     if not DOING_MAML
-        #     else "logs/english_expmix_tiny_deps2/2020.05.29_17.59.31"
-        # )
+    MODEL_FILE = ( 
+        args.model_dir
+        if args.model_dir is not None
+        else ("logs/bert_finetune_en/2021.05.13_01.56.30"
+            # "../backup/pretrained/english_expmix_deps_seed2/2020.07.30_18.50.07"
+            # if not DOING_MAML
+            # else "logs/english_expmix_tiny_deps2/2020.05.29_17.59.31"
+        )
     )
     train_params = get_params("metalearning", args.seed)
 

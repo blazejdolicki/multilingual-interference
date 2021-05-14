@@ -19,6 +19,8 @@ from allennlp.common.params import with_fallback
 from allennlp.models.archival import load_archive
 from allennlp.predictors.predictor import Predictor
 
+from allennlp.data import DatasetReader, Instance
+
 from .dataset_readers.conll18_ud_eval import UDError, evaluate, load_conllu_file
 from .dataset_readers.evaluate_2019_task2 import (
     input_pairs,
@@ -173,6 +175,41 @@ def predict_model_with_archive(
     )
     manager.run()
 
+
+##------------------------------ No Zip --------------------------------------
+def predict_model_without_archive(model, predictor: str, params: Params, serialization_dir: str,
+                                  gold_file: str, # Gold predictions
+                                  pred_file: str,  # Predictions output file
+                                  output_file: str, # Json output file
+                                  segment_file: str = None, batch_size: int = 1):
+    """
+    metatest_all.py
+    allennlp/predictors/predictor.py
+    """
+    cuda_device = params["trainer"]["cuda_device"]
+    check_for_gpu(cuda_device)
+
+    segment_file = segment_file if segment_file else gold_file
+    dataset_reader_to_load = 'validation' #Default and is used
+    # -> config here as specified in <Predictor.from_archive>
+    overrides = ''
+    config = Params.from_file(os.path.join(serialization_dir, 'config.json'), overrides)
+    dataset_reader_params = config["dataset_reader"]
+    dataset_reader = DatasetReader.from_params(dataset_reader_params)
+
+    model.eval()
+    predictor = Predictor.by_name(predictor)(model, dataset_reader)
+
+    manager = _PredictManager(predictor,
+                              segment_file,
+                              pred_file,
+                              batch_size,
+                              print_to_console=False,
+                              has_dataset_reader=True)
+    manager.run()
+    evaluation = evaluate(load_conllu_file(gold_file), load_conllu_file(pred_file))
+    save_metrics(evaluation, output_file)
+##-----------------------------------------------------------------------------
 
 def predict_and_evaluate_model_with_archive(
     predictor: str,

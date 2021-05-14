@@ -49,3 +49,4 @@ An example of how to run the code when you have pretrained a model with `pretrai
 This will save a model to the directory `saved_models/XMAML_0.0001_1e-05_0.0007_1e-05_20_19hindi`, we can meta-validate using this script:
 
 `python3.7 metatest_all.py --validate True --lr_decoder 0.0001 --lr_bert 1e-05 --updates 20 --support_set_size 20 --optimizer sgd --seed 3 --episode 500 --model_dir saved_models/XMAML_0.0001_1e-05_0.0007_1e-05_20_19hindi`
+metatest_all.py --validate True --lr_decoder 0.0001 --lr_bert 1e-05 --updates 20 --support_set_size 20 --optimizer sgd --seed 3 --episode 500 --model_dir saved_models/XMAML_0.0001_1e-05_0.0007_1e-05_20_19hindi`

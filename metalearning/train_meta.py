@@ -25,6 +25,7 @@ import json
 import sys
 import os
 
+from allennlp.nn.util import move_to_device
 sys.stdout.reconfigure(encoding="utf-8")
 
 
@@ -33,11 +34,11 @@ def main():
 
     parser.add_argument("--skip_update", default=0, type=float, help="Skip update on the support set")
     parser.add_argument("--seed", default=9999, type=int, help="Set seed")
-    parser.add_argument("--support_set_size", default=32, type=int, help="Support set size")
+    parser.add_argument("--support_set_size", default=1, type=int, help="Support set size")
     parser.add_argument("--maml", default=False, type=bool, help="Do MAML instead of XMAML, that is, include English as an auxiliary task if flag is set and start from scratch",)
     parser.add_argument( "--addenglish", default=False, type=bool, help="Add English as a task" )
-    parser.add_argument( "--notaddhindi", default=False, type=bool, help="Add English as a task" )
-    parser.add_argument("--episodes", default=900, type=int, help="Amount of episodes")
+    parser.add_argument( "--notaddhindi", default=False, type=bool, help="Add English as a task" ) #?
+    parser.add_argument("--episodes", default=1, type=int, help="Amount of episodes")
     parser.add_argument( "--updates", default=5, type=int, help="Amount of inner loop updates" )
     parser.add_argument("--name", default="", type=str, help="Name to add")
     parser.add_argument( "--meta_lr_decoder", default=0.001, type=float, help="Meta adaptation LR for the decoder")
@@ -48,8 +49,8 @@ def main():
     args = parser.parse_args()
 
     training_tasks = []
-
-    # Yes, I know
+    torch.cuda.empty_cache()
+    # 7 languages by default -R
     for lan, lan_l in zip(train_languages, train_languages_lowercase):
         if "indi" in lan and not args.notaddhindi:
             training_tasks.append(
@@ -59,7 +60,7 @@ def main():
             )
         elif "indi" in lan and args.notaddhindi:
             continue
-        elif "indi" not in lan and not args.notaddhindi:
+        elif "indi" not in lan and not args.notaddhindi: #this gets called as default -R
             training_tasks.append(
                 get_language_dataset(
                     lan, lan_l, seed=args.seed, support_set_size=args.support_set_size
@@ -71,7 +72,7 @@ def main():
                     lan, lan_l, seed=args.seed, support_set_size=args.support_set_size
                 )
             )
-
+            
     # Setting parameters
     DOING_MAML = args.maml
     if DOING_MAML or args.addenglish:
@@ -169,17 +170,19 @@ def main():
 
             # Sample two batches
             support_set = next(iter(task_generator))
-
+            support_set = move_to_device(support_set,torch.device('cuda'))
             if SKIP_UPDATE == 0.0 or torch.rand(1) > SKIP_UPDATE:
                 for mini_epoch in range(UPDATES):
                     # print(support_set)
+                    
+                    torch.cuda.empty_cache()
                     inner_loss = learner.forward(**support_set)["loss"]
                     learner.adapt(inner_loss, first_order=True)
                     del inner_loss
                     torch.cuda.empty_cache()
             del support_set
-
             query_set = next(iter(task_generator))
+            query_set = move_to_device(query_set,torch.device('cuda'))
 
             eval_loss = learner.forward(**query_set)["loss"]
             iteration_loss += eval_loss
@@ -205,7 +208,7 @@ def main():
         del iteration_loss
         torch.cuda.empty_cache()
 
-        if iteration + 1 in [500, 1500, 2000] and not (
+        if iteration + 1 in [1,500, 1500, 2000] and not (
             iteration + 1 == 500 and DOING_MAML
         ):
             backup_path = os.path.join(
@@ -214,15 +217,17 @@ def main():
             torch.save(meta_m.module.state_dict(), backup_path)
 
     print("Done training ... archiving three models!")
-    for i in [500, 600, 900, 1200, 1500, 1800, 2000, 1500]:
+    for i in [1,500, 600, 900, 1200, 1500, 1800, 2000, 1500]:
         filename = os.path.join(MODEL_VAL_DIR, "model" + str(i) + ".th")
+        print(filename)
         if os.path.exists(filename):
+            print('exists')
             save_place = MODEL_VAL_DIR + "/" + str(i)
             subprocess.run(["mv", filename, MODEL_VAL_DIR + "/best.th"])
             subprocess.run(["mkdir", save_place])
             archive_model(
                 MODEL_VAL_DIR,
-                files_to_archive=train_params.files_to_archive,
+                # files_to_archive=train_params.files_to_archive,
                 archive_path=save_place,
             )
     subprocess.run(["rm", MODEL_VAL_DIR + "/best.th"])

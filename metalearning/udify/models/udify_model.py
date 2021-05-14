@@ -116,7 +116,7 @@ class UdifyModel(Model):
             # Model is predicting tokens, so add them to the gold tags
             gold_tags["tokens"] = tokens["tokens"]
 
-        mask = get_text_field_mask(tokens).cuda()
+        mask = get_text_field_mask(tokens)
         self._apply_token_dropout(tokens)
 
         embedded_text_input = self.text_field_embedder(tokens)

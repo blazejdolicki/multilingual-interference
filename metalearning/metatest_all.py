@@ -26,71 +26,31 @@ from naming_conventions import (
 )
 from get_language_dataset import get_language_dataset, get_test_set
 import argparse
+# metatest_all.py --validate True --lr_decoder 0.0001 --lr_bert 1e-05 --updates 20 --support_set_size 20 --optimizer sgd --seed 3 --episode 500
+from allennlp.nn.util import move_to_device
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--seed", default=9999, type=int, help="Set seed")
-    parser.add_argument("--support_set_size", default=32, type=int, help="Support set size")
-    parser.add_argument(
-        "--start_from_pretrain", default=0, type=int, help="Whether to start from pretrain"
-    )
-    parser.add_argument(
-        "--model_dir",
-        default=None,
-        type=str,
-        help="Directory from which to start testing if not starting from pretrain",
-    )
-    parser.add_argument(
-        "--episode",
-        default=None,
-        type=int,
-        help="Saved episode from which to start testing.",
-    )
-    parser.add_argument("--name", default=None, type=str, help="Backwards compatability")
-    parser.add_argument(
-        "--skip_update", default=None, type=float, help="Backwards compatability"
-    )
-    parser.add_argument(
-        "--lr_decoder",
-        default=None,
-        type=float,
-        help="Fast adaptation output learning rate for the decoder",
-    )
-    parser.add_argument(
-        "--lr_bert",
-        default=None,
-        type=float,
-        help="Fast adaptation output learning rate for BERT",
-    )
-    parser.add_argument(
-        "--updates", default=3, type=int, help="Amount of inner loop updates"
-    )
-    parser.add_argument(
-        "--optimizer", default="adam", type=str, help="Which optimizer to use? [adam|sgd]"
-    )
-    parser.add_argument(
-        "--validate",
-        default=False,
-        type=bool,
-        help="Meta-validate on validation language, for hyperparameter search",
-    )
-    parser.add_argument(
-        "--amount",
-        default=20,
-        type=int,
-        help="Amount of experiments to do /meta-test batches to sample",
-    )
-    parser.add_argument(
-        "--batches", default=1, type=int, help="How many batches to sample per update"
-    )
+    parser.add_argument("--support_set_size", default=32,type=int, help="Support set size")
+    parser.add_argument("--start_from_pretrain", default=0,type=int, help="Whether to start from pretrain")
+    parser.add_argument("--model_dir",default="saved_models/XMAML_0.001_0.001_0.001_0.001_5_9999",type=str,help="Directory from which to start testing if not starting from pretrain",)
+    parser.add_argument("--episode",default=None,type=int,help="Saved episode from which to start testing.",)
+    parser.add_argument("--name", default=None, type=str,help="Backwards compatability")
+    parser.add_argument("--skip_update", default=None,type=float, help="Backwards compatability")
+    parser.add_argument("--lr_decoder",default=None,type=float,help="Fast adaptation output learning rate for the decoder",)
+    parser.add_argument("--lr_bert",default=None,type=float,help="Fast adaptation output learning rate for BERT",)
+    parser.add_argument("--updates", default=3, type=int,help="Amount of inner loop updates")
+    parser.add_argument("--optimizer", default="adam",type=str, help="Which optimizer to use? [adam|sgd]")
+    parser.add_argument("--validate",default=False,type=bool,help="Meta-validate on validation language, for hyperparameter search",)
+    parser.add_argument("--amount",default=20,type=int,help="Amount of experiments to do /meta-test batches to sample",)
+    parser.add_argument("--batches", default=1, type=int,help="How many batches to sample per update")
 
     args = parser.parse_args()
 
     # The model on which to Meta_test
     MODEL_DIR_PRETRAIN = "logs/english_expmix_deps/2020.05.17_01.08.52/"
-    MODEL_DIR_FINETUNE = os.path.join(
-        args.model_dir, str(args.episode) if args.episode is not None else ""
-    )
+    MODEL_DIR_FINETUNE = os.path.join(args.model_dir, str(args.episode) if args.episode is not None else "")
 
     MODEL_DIR = MODEL_DIR_FINETUNE if args.start_from_pretrain == 0 else MODEL_DIR_PRETRAIN
 
@@ -121,7 +81,8 @@ def main():
         ]
     )
     subprocess.run(
-        ["mv", os.path.join(MODEL_DIR, "weights.th"), os.path.join(MODEL_DIR, "best.th")]
+        ["mv", os.path.join(MODEL_DIR, "weights.th"),
+         os.path.join(MODEL_DIR, "best.th")]
     )
 
     # Is it validation time, or test time?
@@ -179,8 +140,10 @@ def main():
         for TRY in range(args.amount):
 
             subprocess.run(["mkdir", SERIALIZATION_DIR])
-            subprocess.run(["cp", "-r", MODEL_DIR + "/vocabulary", SERIALIZATION_DIR])
-            subprocess.run(["cp", MODEL_DIR + "/config.json", SERIALIZATION_DIR])
+            subprocess.run(
+                ["cp", "-r", MODEL_DIR + "/vocabulary", SERIALIZATION_DIR])
+            subprocess.run(
+                ["cp", MODEL_DIR + "/config.json", SERIALIZATION_DIR])
 
             # Set up model and iterator and optimizer
             train_params = get_params("metatesting", args.seed)
@@ -208,7 +171,8 @@ def main():
 
             for BATCH in range(BATCHES):
                 try:
-                    support_set = next(val_iterator)[0]
+                    support_set = next(iter(val_iterator))                    
+                    support_set = move_to_device(support_set,torch.device('cuda'))
                 except StopIteration:
                     test_file = get_test_set(
                         language,
@@ -228,7 +192,9 @@ def main():
                         validate=True,
                         bs=args.support_set_size * args.batches,
                     )
-                    support_set = next(val_iterator)[0]
+                    support_set = next(iter(val_iterator))
+                    support_set = move_to_device(support_set,torch.device('cuda'))
+
                 NO += 1
 
                 # Do one forward pass
@@ -265,6 +231,7 @@ def main():
             del m
             del optimizer
         del val_iterator
+
 
 if __name__ == "__main__":
     main()

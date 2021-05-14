@@ -524,9 +524,9 @@ class BertEmbedder(TokenEmbedder):
         
         # see: https://github.com/huggingface/transformers/blob/c781171dfa187829e2a5ce33f805ac8bd561184f/src/transformers/models/bert/modeling_bert.py#L859
         _, _, all_encoder_layers = self.bert_model(
-            input_ids=util.combine_initial_dims(input_ids.cuda()),
-            token_type_ids=util.combine_initial_dims(token_type_ids.cuda()),
-            attention_mask=util.combine_initial_dims(input_mask.cuda()),
+            input_ids=util.combine_initial_dims(input_ids),
+            token_type_ids=util.combine_initial_dims(token_type_ids),
+            attention_mask=util.combine_initial_dims(input_mask),
             return_dict=False,
             output_hidden_states=True
         )
@@ -585,7 +585,7 @@ class BertEmbedder(TokenEmbedder):
             layers = util.uncombine_initial_dims(recombined_embeddings, dims)
         else:
             # offsets is (batch_size, d1, ..., dn, orig_sequence_length)
-            offsets2d = util.combine_initial_dims(offsets.cuda())
+            offsets2d = util.combine_initial_dims(offsets)
             # now offsets is (batch_size * d1 * ... * dn, orig_sequence_length)
             range_vector = util.get_range_vector(
                 offsets2d.size(0), device=util.get_device_of(recombined_embeddings)

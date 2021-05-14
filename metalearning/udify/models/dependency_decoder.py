@@ -217,8 +217,8 @@ class DependencyDecoder(Model):
             self._attachment_scores(
                 predicted_heads[:, 1:],
                 predicted_head_tags[:, 1:],
-                head_indices[:, 1:].cuda(),
-                head_tags[:, 1:].cuda(),
+                head_indices[:, 1:],
+                head_tags[:, 1:],
                 evaluation_mask,
             )
               

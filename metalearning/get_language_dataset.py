@@ -9,6 +9,7 @@ import os
 import datetime
 import allennlp
 from allennlp.common.params import Params
+from allennlp.nn.util import move_to_device
 from allennlp.common.util import lazy_groups_of
 from allennlp.data.vocabulary import Vocabulary
 from allennlp.training.util import datasets_from_params
@@ -18,6 +19,7 @@ from naming_conventions import (
     languages_too_small_for_20_batch_20,
     languages_too_small_for_20_batch_20_lowercase,
 )
+import torch
 
 from torch.utils.data import DataLoader
 
@@ -158,20 +160,16 @@ def get_language_dataset(
     if "vocabulary" in params:
         # Remove this key to make AllenNLP happy
         params["vocabulary"].pop("non_padded_namespaces", None)
-    params["device"] = -1
+    params["device"] = 0
     vocab = util.cache_vocab(params)
     # Special logic to instantiate backward-compatible trainer.
     # print(params)
-    pieces = datasets_from_params(
-        params
-    )
+    datasets = datasets_from_params(params)
     # print(pieces)
     if validate:
-        raw_train_generator = pieces(
-            pieces.validation_dataset, num_epochs=1, shuffle=True
-        )
+        raw_train_generator = datasets["validation"]
     else:
-        raw_train_generator = pieces["train"]
+        raw_train_generator = datasets["train"]
     
     # for dataset in raw_train_generator.values():
     
@@ -180,7 +178,9 @@ def get_language_dataset(
     from allennlp.data import allennlp_collate
     # Construct a dataloader directly for a dataset which contains allennlp
     # Instances which have _already_ been indexed.
-    my_loader = DataLoader(raw_train_generator, batch_size=support_set_size, collate_fn=allennlp_collate)
+    # raw_train_generator = move_to_device(raw_train_generator,torch.device('cuda'))
+    my_loader = DataLoader(raw_train_generator, batch_size=support_set_size, collate_fn=allennlp_collate,pin_memory=True)
     # groups = lazy_groups_of(my_loader
 # , 1)# -R hardcoded batch of size 1?
+    
     return my_loader

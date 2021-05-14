@@ -20,6 +20,11 @@ parser.add_argument("--batch_size", default=20, type=int, help="How big is each 
 parser.add_argument("--seed", default=2002, type=int, help="Seed for the shuffler")
 
 args = parser.parse_args()
+
+
+# if args.file == None:
+#     with open("all_mini_sets.txt", "r", encoding="utf-8") as conllu_file:
+
 output_filename = os.path.join(
     "data/ud-tiny-treebanks/size" + str(args.batch_size),
     args.file.strip("-test.conllu").split("/")[-1],

@@ -1,6 +1,0 @@
-upos
-*labels
-lemmas
-xpos
-feats
-*tags

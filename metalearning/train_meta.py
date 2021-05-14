@@ -47,6 +47,8 @@ def main():
     parser.add_argument( "--inner_lr_bert", default=0.001, type=float, help="Inner learner LR for BERT" )
     parser.add_argument( "--model_dir", default=None, type=str, help="Directory from where to start training. Should be a 'clean' model for MAML and a pretrained model for X-MAML.",    )
     args = parser.parse_args()
+    from pathlib import Path
+    Path("saved_models").mkdir(parents=True, exist_ok=True)
 
     training_tasks = []
     torch.cuda.empty_cache()

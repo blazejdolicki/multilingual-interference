@@ -24,11 +24,13 @@ import argparse
 import subprocess
 import json
 import sys
-import os
+import os, glob
+
 
 from allennlp.nn.util import move_to_device
 sys.stdout.reconfigure(encoding="utf-8")
 
+torch.cuda.empty_cache() # please stop oom's
 
 def main():
     parser = argparse.ArgumentParser()
@@ -224,7 +226,7 @@ def main():
                     #print("torch stack",  torch.stack(grads).shape)
 
                     # grads_to_save = torch.stack(grads[0]).reshape(-1)
-                    grads_to_save = grads[0].reshape(-1) # grads[0] are mBERT parameters (?)
+                    grads_to_save = grads[0].detach().reshape(-1) # grads[0] are mBERT parameters (?)
                     #print(grads[0].shape)
                     #print(len(grads))
                     #print(grads[1].shape)
@@ -284,11 +286,27 @@ def main():
                 MODEL_VAL_DIR, "model" + str(iteration + 1) + ".th"
             )
             torch.save(meta_m.module.state_dict(), backup_path)
+        
+        ### NI START
+        # Save the gradients in case OOM occurs
+
+        if iteration%5==0: # not to slow down a lot
+            
+            save_this = torch.from_numpy(np.array(gradients_for_ni))
+
+            for filename in glob.glob("./saved_grads/temp_gradients_for_ni_epi*"): # remove the previoustemp grads
+                os.remove(filename) 
+
+            torch.save(save_this, f"saved_grads/temp_gradients_for_ni_epi{iteration}_upd{UPDATES}_suppSize{args.support_set_size}")
+            torch.cuda.empty_cache()
+
+        ### NI END
+
 
     ### NI START
     save_this = torch.from_numpy(np.array(gradients_for_ni))
     print(f"[INFO]: Saving the gradients with shape {save_this.shape}")
-    torch.save(save_this, f"gradients_for_ni_epi{EPISODES}_upd{UPDATES}_suppSize{args.support_set_size}")
+    torch.save(save_this, f"saved_grads/gradients_for_ni_epi{EPISODES}_upd{UPDATES}_suppSize{args.support_set_size}")
 
     ### NI END
     print("Done training ... archiving three models!")

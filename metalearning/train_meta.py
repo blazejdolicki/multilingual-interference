@@ -3,6 +3,7 @@
 This file Meta-Trains on 7 languages
 And validates on Bulgarian
 """
+#from _typeshed import NoneType
 from naming_conventions import train_languages, train_languages_lowercase
 from get_language_dataset import get_language_dataset
 from get_default_params import get_params
@@ -52,6 +53,7 @@ def main():
     torch.cuda.empty_cache()
     # 7 languages by default -R
     for lan, lan_l in zip(train_languages, train_languages_lowercase):
+        #print(f"[INFO]: Creating dataset for language {lan}")
         if "indi" in lan and not args.notaddhindi:
             training_tasks.append(
                 get_language_dataset(
@@ -160,16 +162,31 @@ def main():
     )  # , weight_decay=0.01)
 
     scheduler = get_cosine_schedule_with_warmup(optimizer, 50, 500)
+
+    # NI START
     print(f"[INFO]: Total amount of training tasks is {len(training_tasks)}")
+    gradients_for_ni = torch.Tensor()
+
+    gradients_for_ni = [] # in the end it will store the following info in each dim
+    # num_episodes x grad_len x num_languages
+
+    # NI END
+
+
     for iteration in range(EPISODES):
         iteration_loss = 0.0
-
+        # NI START
+        episode_grads = []
+        # NI END
         """Inner adaptation loop"""
         for j, task_generator in enumerate(training_tasks):
 
             # NI start
+            language_grads = torch.Tensor()
             print(f"[INFO:] Meta-training language", train_languages[j])
-            gradients_for_ni = torch.Tensor()
+            #gradients_for_ni = torch.Tensor()
+
+            #print(f"[INFO]: Training taksk has length {len(task_generator)}")
             # NI end
 
             learner = meta_m.clone()
@@ -180,27 +197,48 @@ def main():
             if SKIP_UPDATE == 0.0 or torch.rand(1) > SKIP_UPDATE:
                 for mini_epoch in range(UPDATES):
                     # print(support_set)
-                    
+
                     torch.cuda.empty_cache()
                     inner_loss = learner.forward(**support_set)["loss"]
                     # NI START
+                    
                     # learner.adapt(inner_loss, first_order=True)
-                    grads = autograd.grad(inner_loss, learner.parameters(), create_graph=True, allow_unused=True)
-                    maml_update(learner, lr=0.1, lr_small=INNER_LR_BERT, grads=grads)
+                    # The following two lines  implemnt learning.adapt. See our_maml.py for details
+                    grads = autograd.grad(inner_loss, learner.parameters(), create_graph=False, allow_unused=True)
+                    maml_update(learner, lr=args.inner_lr_decoder, lr_small=args.inner_lr_bert, grads=grads)        
 
-                    print(grads[0].shape)
-                    print(len(grads))
-                    print(grads[1].shape)
+                    # print("SHAPES")
+                    # new_grads = []# filters out None grads
+                    # for i in grads:
+                    #     print(type(i))
+                    #     if type(i) == torch.Tensor:
+                    #         #print(i.shape)
+                    #         new_grads.append(i)
+                        
 
-                    gradients_for_ni = torch.cat([gradients_for_ni.cpu(), grads[0].cpu().flatten().reshape(-1,1)], dim=-1)
-                    print(gradients_for_ni.shape)
+                    #print("torch stack",  torch.stack(new_grads).shape)
+                    #print("torch stack",  torch.stack(grads).shape)
+
+                    # grads_to_save = torch.stack(grads[0]).reshape(-1)
+                    grads_to_save = grads[0].reshape(-1)
+                    #print(grads[0].shape)
+                    #print(len(grads))
+                    #print(grads[1].shape)
+
+                    language_grads = torch.cat([language_grads.cpu(), grads_to_save.cpu()], dim=-1) # Updates*grad_len
+
+                    #print(gradients_for_ni.shape)
                     # NI end
 
                     del inner_loss
                     torch.cuda.empty_cache()
             
             # NI start
-
+            language_grads = language_grads.reshape(-1, UPDATES) #
+            language_grads = torch.mean(language_grads, dim = 1) # number of gradients x 1
+            print("Language grads shape", language_grads.shape)
+            episode_grads.append(language_grads.detach().numpy())
+            #torch.save()
             # NI end
 
             del support_set
@@ -214,6 +252,10 @@ def main():
             del learner
             del query_set
             torch.cuda.empty_cache()
+
+        ### NI START
+        gradients_for_ni.append(np.array(episode_grads))
+        #### NI end
 
         # Sum up and normalize over all 7 losses
         iteration_loss /= len(training_tasks)
@@ -239,6 +281,11 @@ def main():
             )
             torch.save(meta_m.module.state_dict(), backup_path)
 
+    ### NI START
+    print("[INFO]: Saving the gradients")
+    torch.save(torch.from_numpy(np.array(gradients_for_ni)), "gradients_for_ni")
+
+    ### NI END
     print("Done training ... archiving three models!")
     for i in [1,500, 600, 900, 1200, 1500, 1800, 2000, 1500]:
         filename = os.path.join(MODEL_VAL_DIR, "model" + str(i) + ".th")

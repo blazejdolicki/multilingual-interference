@@ -68,7 +68,7 @@ def get_language_dataset(
         language2: the lowercased variant, ie. ru_taiga-ud or pt_gsd-ud
         Why are these files named this way? I do not know, one of the mysteries of udify
     """
-
+    print(f"[INFO]: Using support set size", support_set_size)
     configs = []
     the_params = {
         "name": "clean_dataload",

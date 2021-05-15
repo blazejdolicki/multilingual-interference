@@ -49,6 +49,9 @@ def main():
     parser.add_argument( "--model_dir", default=None, type=str, help="Directory from where to start training. Should be a 'clean' model for MAML and a pretrained model for X-MAML.",    )
     args = parser.parse_args()
 
+    from pathlib import Path
+    Path("saved_models").mkdir(parents=True, exist_ok=True)
+
     training_tasks = []
     torch.cuda.empty_cache()
     # 7 languages by default -R
@@ -174,6 +177,7 @@ def main():
 
 
     for iteration in range(EPISODES):
+        print(f"[INFO]: Starting episode {iteration}", flush=True)
         iteration_loss = 0.0
         # NI START
         episode_grads = []
@@ -183,7 +187,7 @@ def main():
 
             # NI start
             language_grads = torch.Tensor()
-            print(f"[INFO:] Meta-training language", train_languages[j])
+            #print(f"[INFO:] Meta-training language", train_languages[j])
             #gradients_for_ni = torch.Tensor()
 
             #print(f"[INFO]: Training taksk has length {len(task_generator)}")
@@ -220,12 +224,12 @@ def main():
                     #print("torch stack",  torch.stack(grads).shape)
 
                     # grads_to_save = torch.stack(grads[0]).reshape(-1)
-                    grads_to_save = grads[0].reshape(-1)
+                    grads_to_save = grads[0].reshape(-1) # grads[0] are mBERT parameters (?)
                     #print(grads[0].shape)
                     #print(len(grads))
                     #print(grads[1].shape)
 
-                    language_grads = torch.cat([language_grads.cpu(), grads_to_save.cpu()], dim=-1) # Updates*grad_len
+                    language_grads = torch.cat([language_grads.cpu(), grads_to_save.cpu()], dim=-1) # Updates*grad_len in the last update
 
                     #print(gradients_for_ni.shape)
                     # NI end
@@ -234,9 +238,9 @@ def main():
                     torch.cuda.empty_cache()
             
             # NI start
-            language_grads = language_grads.reshape(-1, UPDATES) #
+            language_grads = language_grads.reshape(-1, UPDATES) # setup for taking the average
             language_grads = torch.mean(language_grads, dim = 1) # number of gradients x 1
-            print("Language grads shape", language_grads.shape)
+            #print("Language grads shape", language_grads.shape)
             episode_grads.append(language_grads.detach().numpy())
             #torch.save()
             # NI end
@@ -282,8 +286,9 @@ def main():
             torch.save(meta_m.module.state_dict(), backup_path)
 
     ### NI START
-    print("[INFO]: Saving the gradients")
-    torch.save(torch.from_numpy(np.array(gradients_for_ni)), "gradients_for_ni")
+    save_this = torch.from_numpy(np.array(gradients_for_ni))
+    print(f"[INFO]: Saving the gradients with shape {save_this.shape}")
+    torch.save(save_this, f"gradients_for_ni_epi{EPISODES}_upd{UPDATES}_suppSize{args.support_set_size}")
 
     ### NI END
     print("Done training ... archiving three models!")

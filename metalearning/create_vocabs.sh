@@ -1,14 +1,15 @@
 #!/bin/bash
 
-#SBATCH --partition=gpu_titanrtx_shared_course
+#SBATCH --partition=gpu_shared_course
 #SBATCH --gres=gpu:1
 #SBATCH --job-name=ConcatTreebanks
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
-#SBATCH --time=10:00:00
+#SBATCH --time=01:00:00
 #SBATCH --mem=32000M
 #SBATCH --output=slurm_output_%A.out
 
+# for some reason we need CUDA here
 
 module purge
 module load 2019
@@ -24,5 +25,9 @@ module load Anaconda3/2018.12
 # Activate your environment
 source activate atcs-project
 
-# finetune mBERT model with English data using the vocabulary specified in config (that was created from all exp-mix languages)
-python train_meta.py --model_dir logs/bert_finetune_en/2021.05.12_23.02.00
+DATA_DIR="data"
+TREEBANK="concat-exp-mix"
+OUTPUT_DIR="data/concat-exp-mix/vocab"
+
+# Run your code
+srun python create_vocabs.py --dataset_dir ${DATA_DIR} --output_dir ${OUTPUT_DIR} --treebanks ${TREEBANK}

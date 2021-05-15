@@ -23,6 +23,8 @@ import torch
 
 from torch.utils.data import DataLoader
 
+print(f"[INFO]: Using the following train languages", train_languages)
+
 def get_test_set(language, language2, number=None, validating=False, bs=20):
     """
     Gets the test set - for most languages this is just the normal test file.

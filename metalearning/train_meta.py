@@ -7,7 +7,7 @@ from naming_conventions import train_languages, train_languages_lowercase
 from get_language_dataset import get_language_dataset
 from get_default_params import get_params
 from udify import util
-from ourmaml import MAML
+from ourmaml import MAML, maml_update
 from udify.predictors import predictor
 from allennlp.common.util import prepare_environment
 from allennlp.models.model import Model
@@ -47,8 +47,6 @@ def main():
     parser.add_argument( "--inner_lr_bert", default=0.001, type=float, help="Inner learner LR for BERT" )
     parser.add_argument( "--model_dir", default=None, type=str, help="Directory from where to start training. Should be a 'clean' model for MAML and a pretrained model for X-MAML.",    )
     args = parser.parse_args()
-    from pathlib import Path
-    Path("saved_models").mkdir(parents=True, exist_ok=True)
 
     training_tasks = []
     torch.cuda.empty_cache()
@@ -162,12 +160,18 @@ def main():
     )  # , weight_decay=0.01)
 
     scheduler = get_cosine_schedule_with_warmup(optimizer, 50, 500)
-
+    print(f"[INFO]: Total amount of training tasks is {len(training_tasks)}")
     for iteration in range(EPISODES):
         iteration_loss = 0.0
 
         """Inner adaptation loop"""
         for j, task_generator in enumerate(training_tasks):
+
+            # NI start
+            print(f"[INFO:] Meta-training language", train_languages[j])
+            gradients_for_ni = torch.Tensor()
+            # NI end
+
             learner = meta_m.clone()
 
             # Sample two batches
@@ -179,9 +183,26 @@ def main():
                     
                     torch.cuda.empty_cache()
                     inner_loss = learner.forward(**support_set)["loss"]
-                    learner.adapt(inner_loss, first_order=True)
+                    # NI START
+                    # learner.adapt(inner_loss, first_order=True)
+                    grads = autograd.grad(inner_loss, learner.parameters(), create_graph=True, allow_unused=True)
+                    maml_update(learner, lr=0.1, lr_small=INNER_LR_BERT, grads=grads)
+
+                    print(grads[0].shape)
+                    print(len(grads))
+                    print(grads[1].shape)
+
+                    gradients_for_ni = torch.cat([gradients_for_ni.cpu(), grads[0].cpu().flatten().reshape(-1,1)], dim=-1)
+                    print(gradients_for_ni.shape)
+                    # NI end
+
                     del inner_loss
                     torch.cuda.empty_cache()
+            
+            # NI start
+
+            # NI end
+
             del support_set
             query_set = next(iter(task_generator))
             query_set = move_to_device(query_set,torch.device('cuda'))

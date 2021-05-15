@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --partition=gpu_titanrtx_shared_course
+#SBATCH --partition=gpu_shared_course
 #SBATCH --gres=gpu:1
 #SBATCH --job-name=ConcatTreebanks
 #SBATCH --ntasks=1
@@ -25,4 +25,4 @@ module load Anaconda3/2018.12
 source activate atcs-project
 
 # finetune mBERT model with English data using the vocabulary specified in config (that was created from all exp-mix languages)
-python train_meta.py --model_dir logs/bert_finetune_en/2021.05.12_23.02.00
+python train.py --config config/ud/en/udify_bert_finetune_en_ewt.json --name bert_finetune_en

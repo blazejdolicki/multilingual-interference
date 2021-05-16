@@ -184,9 +184,9 @@ def main():
     for iteration in range(EPISODES):
         print(f"[INFO]: Starting episode {iteration}", flush=True)
         iteration_loss = 0.0
-        # NI START
-        episode_grads = []
-        # NI END
+        ### NI START
+        episode_grads = [] # store the gradients of an episode for all languages
+        ### NI END
         """Inner adaptation loop"""
         for j, task_generator in enumerate(training_tasks):
 
@@ -209,35 +209,29 @@ def main():
 
                     torch.cuda.empty_cache()
                     inner_loss = learner.forward(**support_set)["loss"]
-                    # NI START
+                    ### NI START
                     
                     # learner.adapt(inner_loss, first_order=True)
                     # The following two lines  implemnt learning.adapt. See our_maml.py for details
                     grads = autograd.grad(inner_loss, learner.parameters(), create_graph=False, allow_unused=True)
                     maml_update(learner, lr=args.inner_lr_decoder, lr_small=args.inner_lr_bert, grads=grads)        
 
-                    # print("SHAPES")
-                    # new_grads = []# filters out None grads
-                    # for i in grads:
-                    #     print(type(i))
-                    #     if type(i) == torch.Tensor:
-                    #         #print(i.shape)
-                    #         new_grads.append(i)
-                        
-
-                    #print("torch stack",  torch.stack(new_grads).shape)
-                    #print("torch stack",  torch.stack(grads).shape)
-
-                    # grads_to_save = torch.stack(grads[0]).reshape(-1)
-                    grads_to_save = grads[0].detach().reshape(-1) # grads[0] are mBERT parameters (?)
-                    #print(grads[0].shape)
-                    #print(len(grads))
-                    #print(grads[1].shape)
+                    #print("SHAPES")
+                    new_grads = []# filters out None grads
+                    for i in grads:
+                        #print(type(i))
+                        if type(i) == torch.Tensor:
+                            #print(i.shape)
+                            new_grads.append(i.detach().reshape(-1))
+            
+                    #grads_to_save = grads[0].detach().reshape(-1) # grads[0] are mBERT parameters (?)
+                    grads_to_save = torch.hstack(new_grads) # getting all the parameters
+                    #print(f"Shape of grads to save", grads_to_save.shape)
 
                     language_grads = torch.cat([language_grads.cpu(), grads_to_save.cpu()], dim=-1) # Updates*grad_len in the last update
 
                     #print(gradients_for_ni.shape)
-                    # NI end
+                    ### NI end
 
                     del inner_loss
                     torch.cuda.empty_cache()
@@ -314,10 +308,11 @@ def main():
             
             save_this = np.array(cos_matrices)
 
-            for filename in glob.glob("./cos_matrices/cos_matrices/temp_epiosde_cos_mat*"): # remove the previoustemp grads
+            # Delete the last temp file
+            for filename in glob.glob("./cos_matrices/temp_allGrads_epiosde_cos_mat*"): # remove the previoustemp grads
                 os.remove(filename) 
 
-            np.save(f"cos_matrices/temp_epiosde_cos_mat{iteration}_upd{UPDATES}_suppSize{args.support_set_size}", save_this)
+            np.save(f"cos_matrices/temp_allGrads_epiosde_cos_mat{iteration}_upd{UPDATES}_suppSize{args.support_set_size}", save_this)
             torch.cuda.empty_cache()
 
         ### NI END
@@ -330,7 +325,7 @@ def main():
 
     cos_matrices = np.array(cos_matrices)
     print(f"[INFO]: Saving the similarity matrix with shape {cos_matrices.shape}")
-    np.save(f"cos_matrices/epiosde_cos_mat{EPISODES}_upd{UPDATES}_suppSize{args.support_set_size}", cos_matrices)
+    np.save(f"cos_matrices/allGrads_epiosde_cos_mat{EPISODES}_upd{UPDATES}_suppSize{args.support_set_size}", cos_matrices)
 
     ### NI END
     print("Done training ... archiving three models!")

@@ -227,21 +227,19 @@ train_languages_order_1_lowercase = [
 ]
 
 train_languages_order_2 = [
-    "UD_Arabic-PADT",
-    "UD_Czech-PDT",
-    "UD_Italian-ISDT",
-    "UD_Norwegian-Nynorsk",
-    "UD_Russian-SynTagRus",
-    "UD_Hindi-HDTB",
-    "UD_Korean-Kaist",
+    'UD_Korean-Kaist',
+    'UD_Italian-ISDT',
+    'UD_Hindi-HDTB',
+    'UD_Norwegian-Nynorsk',
+    'UD_Arabic-PADTUD_Czech-PDT',
+    'UD_Russian-SynTagRus'
 ]
 
 train_languages_order_2_lowercase = [
-    "ar_padt-ud",
-    "cs_pdt-ud",
-    "it_isdt-ud",
-    "no_nynorsk-ud",
-    "ru_syntagrus-ud",
-    "hi_hdtb-ud",
     "ko_kaist-ud",
+    "it_isdt-ud",
+    "hi_hdtb-ud",
+    "no_nynorsk-ud",
+    "ar_padt-ud",
+    "ru_syntagrus-ud"
 ]

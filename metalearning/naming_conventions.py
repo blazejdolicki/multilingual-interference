@@ -231,7 +231,8 @@ train_languages_order_2 = [
     'UD_Italian-ISDT',
     'UD_Hindi-HDTB',
     'UD_Norwegian-Nynorsk',
-    'UD_Arabic-PADTUD_Czech-PDT',
+    'UD_Arabic-PADT',
+    'UD_Czech-PDT',
     'UD_Russian-SynTagRus'
 ]
 
@@ -241,5 +242,6 @@ train_languages_order_2_lowercase = [
     "hi_hdtb-ud",
     "no_nynorsk-ud",
     "ar_padt-ud",
+    "cs_pdt-ud",
     "ru_syntagrus-ud"
 ]

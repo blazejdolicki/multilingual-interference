@@ -213,7 +213,7 @@ train_languages_order_1 = [
      'UD_Czech-PDT',
      'UD_Arabic-PADT',
      'UD_Hindi-HDTB',
-     'UD_Korean-Kais'
+     'UD_Korean-Kaist'
 ]
 
 train_languages_order_1_lowercase = [

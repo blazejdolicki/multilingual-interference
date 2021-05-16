@@ -202,3 +202,46 @@ train_languages_lowercase = [
 validation_languages = ["UD_Bulgarian-BTB", "UD_Telugu-MTG"]
 
 validation_languages_lowercase = ["bg_btb-ud", "te_mtg-ud"]
+
+
+# Similarity experiments
+
+train_languages_order_1 = [
+     'UD_Norwegian-Nynorsk',
+     'UD_Russian-SynTagRus',
+     'UD_Italian-ISDT',
+     'UD_Czech-PDT',
+     'UD_Arabic-PADT',
+     'UD_Hindi-HDTB',
+     'UD_Korean-Kais'
+]
+
+train_languages_order_1_lowercase = [
+    "no_nynorsk-ud",
+    "ru_syntagrus-ud",
+    "it_isdt-ud",
+    "cs_pdt-ud",
+    "ar_padt-ud",
+    "hi_hdtb-ud",
+    "ko_kaist-ud",
+]
+
+train_languages_order_2 = [
+    "UD_Arabic-PADT",
+    "UD_Czech-PDT",
+    "UD_Italian-ISDT",
+    "UD_Norwegian-Nynorsk",
+    "UD_Russian-SynTagRus",
+    "UD_Hindi-HDTB",
+    "UD_Korean-Kaist",
+]
+
+train_languages_order_2_lowercase = [
+    "ar_padt-ud",
+    "cs_pdt-ud",
+    "it_isdt-ud",
+    "no_nynorsk-ud",
+    "ru_syntagrus-ud",
+    "hi_hdtb-ud",
+    "ko_kaist-ud",
+]

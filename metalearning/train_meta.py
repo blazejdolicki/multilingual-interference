@@ -3,26 +3,20 @@
 This file Meta-Trains on 7 languages
 And validates on Bulgarian
 """
-#from _typeshed import NoneType
-from naming_conventions import train_languages, train_languages_lowercase
+from naming_conventions
 from get_language_dataset import get_language_dataset
 from get_default_params import get_params
-from udify import util
 from ourmaml import MAML, maml_update
-from udify.predictors import predictor
 from allennlp.common.util import prepare_environment
 from allennlp.models.model import Model
 from allennlp.models.archival import archive_model
-import allennlp
 from schedulers import get_cosine_schedule_with_warmup
-from torch.optim.lr_scheduler import LambdaLR
 from torch import autograd
 from torch.optim import Adam
 import torch
 import numpy as np
 import argparse
 import subprocess
-import json
 import sys
 import os, glob
 
@@ -32,7 +26,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-torch.cuda.empty_cache() # please stop oom's
+torch.cuda.empty_cache()  # please stop oom's
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -40,17 +35,18 @@ def main():
     parser.add_argument("--skip_update", default=0, type=float, help="Skip update on the support set")
     parser.add_argument("--seed", default=9999, type=int, help="Set seed")
     parser.add_argument("--support_set_size", default=1, type=int, help="Support set size")
-    parser.add_argument("--maml", default=False, type=bool, help="Do MAML instead of XMAML, that is, include English as an auxiliary task if flag is set and start from scratch",)
-    parser.add_argument( "--addenglish", default=False, type=bool, help="Add English as a task" )
-    parser.add_argument( "--notaddhindi", default=False, type=bool, help="Add English as a task" ) #?
+    parser.add_argument("--maml", default=False, type=bool, help="Do MAML instead of XMAML, that is, include English as an auxiliary task if flag is set and start from scratch")
+    parser.add_argument("--addenglish", default=False, type=bool, help="Add English as a task")
+    parser.add_argument("--notaddhindi", default=False, type=bool, help="Add English as a task") #?
     parser.add_argument("--episodes", default=1, type=int, help="Amount of episodes")
-    parser.add_argument( "--updates", default=5, type=int, help="Amount of inner loop updates" )
+    parser.add_argument("--updates", default=5, type=int, help="Amount of inner loop updates")
     parser.add_argument("--name", default="", type=str, help="Name to add")
-    parser.add_argument( "--meta_lr_decoder", default=0.001, type=float, help="Meta adaptation LR for the decoder")
-    parser.add_argument( "--meta_lr_bert", default=0.001, type=float, help="Meta adaptation LR for BERT" )
-    parser.add_argument( "--inner_lr_decoder", default=0.001, type=float, help="Inner learner LR for the decoder" )
-    parser.add_argument( "--inner_lr_bert", default=0.001, type=float, help="Inner learner LR for BERT" )
-    parser.add_argument( "--model_dir", default=None, type=str, help="Directory from where to start training. Should be a 'clean' model for MAML and a pretrained model for X-MAML.",    )
+    parser.add_argument("--meta_lr_decoder", default=0.001, type=float, help="Meta adaptation LR for the decoder")
+    parser.add_argument("--meta_lr_bert", default=0.001, type=float, help="Meta adaptation LR for BERT")
+    parser.add_argument("--inner_lr_decoder", default=0.001, type=float, help="Inner learner LR for the decoder")
+    parser.add_argument("--inner_lr_bert", default=0.001, type=float, help="Inner learner LR for BERT")
+    parser.add_argument("--model_dir", default=None, type=str, help="Directory from where to start training. Should be a 'clean' model for MAML and a pretrained model for X-MAML.")
+    parser.add_argument("--language_order", default=0, type=int, help="The order of languages in the inner loop")
     args = parser.parse_args()
 
     from pathlib import Path
@@ -58,42 +54,29 @@ def main():
 
     training_tasks = []
     torch.cuda.empty_cache()
+
     # 7 languages by default -R
-    for lan, lan_l in zip(train_languages, train_languages_lowercase):
-        #print(f"[INFO]: Creating dataset for language {lan}")
-        if "indi" in lan and not args.notaddhindi:
-            training_tasks.append(
-                get_language_dataset(
-                    lan, lan_l, seed=args.seed, support_set_size=args.support_set_size
-                )
-            )
-        elif "indi" in lan and args.notaddhindi:
-            continue
-        elif "indi" not in lan and not args.notaddhindi: #this gets called as default -R
-            training_tasks.append(
-                get_language_dataset(
-                    lan, lan_l, seed=args.seed, support_set_size=args.support_set_size
-                )
-            )
-        elif "indi" not in lan and args.notaddhindi:
-            training_tasks.append(
-                get_language_dataset(
-                    lan, lan_l, seed=args.seed, support_set_size=args.support_set_size
-                )
-            )
+    if args.language_order == 0:
+        lan_ = naming_conventions.train_languages
+        lan_lowercase_ = naming_conventions.train_languages_lowercase
+
+    elif args.language_order == 1:
+        lan_ = naming_conventions.train_languages_order_1
+        lan_lowercase_ = naming_conventions.train_languages_order_1_lowercase
+
+    elif args.language_order == 2:
+        lan_ = naming_conventions.train_languages_order_2
+        lan_lowercase_ = naming_conventions.train_languages_order_2_lowercase
+
+    for lan, lan_l in zip(lan_, lan_lowercase_):
+        if not ("indi" in lan and args.notaddhindi):
+            training_tasks.append(get_language_dataset(lan, lan_l, seed=args.seed, support_set_size=args.support_set_size))
             
     # Setting parameters
     DOING_MAML = args.maml
     if DOING_MAML or args.addenglish:
-        # Get another training task
-        training_tasks.append(
-            get_language_dataset(
-                "UD_English-EWT",
-                "en_ewt-ud",
-                seed=args.seed,
-                support_set_size=args.support_set_size,
-            )
-        )
+        training_tasks.append(get_language_dataset( "UD_English-EWT", "en_ewt-ud", seed=args.seed, support_set_size=args.support_set_size))
+
     UPDATES = args.updates
     EPISODES = args.episodes
     INNER_LR_DECODER = args.inner_lr_decoder
@@ -309,10 +292,10 @@ def main():
             save_this = np.array(cos_matrices)
 
             # Delete the last temp file
-            for filename in glob.glob("./cos_matrices/temp_allGrads_epiosde_cos_mat*"): # remove the previoustemp grads
+            for filename in glob.glob("./cos_matrices/temp_allGrads_episode_cos_mat*"): # remove the previoustemp grads
                 os.remove(filename) 
 
-            np.save(f"cos_matrices/temp_allGrads_epiosde_cos_mat{iteration}_upd{UPDATES}_suppSize{args.support_set_size}", save_this)
+            np.save(f"cos_matrices/temp_allGrads_episode_cos_mat{iteration}_upd{UPDATES}_suppSize{args.support_set_size}_order{args.language_order}", save_this)
             torch.cuda.empty_cache()
 
         ### NI END
@@ -325,7 +308,7 @@ def main():
 
     cos_matrices = np.array(cos_matrices)
     print(f"[INFO]: Saving the similarity matrix with shape {cos_matrices.shape}")
-    np.save(f"cos_matrices/allGrads_epiosde_cos_mat{EPISODES}_upd{UPDATES}_suppSize{args.support_set_size}", cos_matrices)
+    np.save(f"cos_matrices/allGrads_episode_cos_mat{EPISODES}_upd{UPDATES}_suppSize{args.support_set_size}_order{args.language_order}", cos_matrices)
 
     ### NI END
     print("Done training ... archiving three models!")

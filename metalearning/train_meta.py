@@ -28,6 +28,8 @@ import os, glob
 
 
 from allennlp.nn.util import move_to_device
+from sklearn.metrics.pairwise import cosine_similarity
+
 sys.stdout.reconfigure(encoding="utf-8")
 
 torch.cuda.empty_cache() # please stop oom's
@@ -173,6 +175,7 @@ def main():
     gradients_for_ni = torch.Tensor()
 
     gradients_for_ni = [] # in the end it will store the following info in each dim
+    cos_matrices = []
     # num_episodes x grad_len x num_languages
 
     # NI END
@@ -260,7 +263,23 @@ def main():
             torch.cuda.empty_cache()
 
         ### NI START
-        gradients_for_ni.append(np.array(episode_grads))
+        #gradients_for_ni.append(np.array(episode_grads)) 
+
+        #Does saving epiosde grads seperatetly remedy the issue? yes!
+        # if (iteration+1)%10==0: 
+            # save_this = torch.from_numpy(np.array(episode_grads))
+            # print(f"[INFO]: Saving the gradients with shape {save_this.shape}")
+            # torch.save(save_this, f"saved_grads/epiosde_grad{iteration}_upd{UPDATES}_suppSize{args.support_set_size}")
+
+        epi_grads = np.array(episode_grads)
+        print("[INFO]: Calculating cosine similarity matrix ...")
+        cos_matrix = cosine_similarity(epi_grads)
+        #print("Cos sim matrix shape", cos_matrix.shape)
+        cos_matrices.append(np.array(cos_matrix)) 
+        print("Cos matrices shape", np.array(cos_matrices).shape)
+        #print(f"[INFO]: Saving the similarity matrix with shape {cos_matrix.shape}")
+        #np.save(f"saved_grads/epiosde_grad{iteration}_upd{UPDATES}_suppSize{args.support_set_size}")
+            
         #### NI end
 
         # Sum up and normalize over all 7 losses
@@ -289,24 +308,29 @@ def main():
         
         ### NI START
         # Save the gradients in case OOM occurs
+        # Can't escape OOM
 
-        if iteration%5==0: # not to slow down a lot
+        if iteration%10==0: # not to slow down a lot
             
-            save_this = torch.from_numpy(np.array(gradients_for_ni))
+            save_this = np.array(cos_matrices)
 
-            for filename in glob.glob("./saved_grads/temp_gradients_for_ni_epi*"): # remove the previoustemp grads
+            for filename in glob.glob("./cos_matrices/cos_matrices/temp_epiosde_cos_mat*"): # remove the previoustemp grads
                 os.remove(filename) 
 
-            torch.save(save_this, f"saved_grads/temp_gradients_for_ni_epi{iteration}_upd{UPDATES}_suppSize{args.support_set_size}")
+            np.save(f"cos_matrices/temp_epiosde_cos_mat{iteration}_upd{UPDATES}_suppSize{args.support_set_size}", save_this)
             torch.cuda.empty_cache()
 
         ### NI END
 
 
     ### NI START
-    save_this = torch.from_numpy(np.array(gradients_for_ni))
-    print(f"[INFO]: Saving the gradients with shape {save_this.shape}")
-    torch.save(save_this, f"saved_grads/gradients_for_ni_epi{EPISODES}_upd{UPDATES}_suppSize{args.support_set_size}")
+    # save_this = torch.from_numpy(np.array(gradients_for_ni))
+    # print(f"[INFO]: Saving the gradients with shape {save_this.shape}")
+    # torch.save(save_this, f"saved_grads/gradients_for_ni_epi{EPISODES}_upd{UPDATES}_suppSize{args.support_set_size}")
+
+    cos_matrices = np.array(cos_matrices)
+    print(f"[INFO]: Saving the similarity matrix with shape {cos_matrices.shape}")
+    np.save(f"cos_matrices/epiosde_cos_mat{EPISODES}_upd{UPDATES}_suppSize{args.support_set_size}", cos_matrices)
 
     ### NI END
     print("Done training ... archiving three models!")

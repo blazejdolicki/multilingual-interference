@@ -5,7 +5,7 @@
 #SBATCH --job-name=meta_experiment
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
-#SBATCH --time=10:00:00
+#SBATCH --time=23:59:00
 #SBATCH --mem=32000M
 #SBATCH --output=slurm_output_%A.out
 

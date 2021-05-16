@@ -47,6 +47,7 @@ def main():
     parser.add_argument("--inner_lr_bert", default=0.001, type=float, help="Inner learner LR for BERT")
     parser.add_argument("--model_dir", default=None, type=str, help="Directory from where to start training. Should be a 'clean' model for MAML and a pretrained model for X-MAML.")
     parser.add_argument("--language_order", default=0, type=int, help="The order of languages in the inner loop")
+    parser.add_argument("--save_every", default=5, type=int, help="Save the gradient conflicts every save_every episodes ")
     args = parser.parse_args()
 
     from pathlib import Path
@@ -199,19 +200,19 @@ def main():
                     grads = autograd.grad(inner_loss, learner.parameters(), create_graph=False, allow_unused=True)
                     maml_update(learner, lr=args.inner_lr_decoder, lr_small=args.inner_lr_bert, grads=grads)        
 
-                    #print("SHAPES")
-                    new_grads = []# filters out None grads
-                    for i in grads:
-                        #print(type(i))
-                        if type(i) == torch.Tensor:
-                            #print(i.shape)
-                            new_grads.append(i.detach().reshape(-1))
-            
-                    #grads_to_save = grads[0].detach().reshape(-1) # grads[0] are mBERT parameters (?)
-                    grads_to_save = torch.hstack(new_grads) # getting all the parameters
-                    #print(f"Shape of grads to save", grads_to_save.shape)
+                    if (iteration+1)%args.save_every==0:
+                        new_grads = []# filters out None grads
+                        for i in grads:
+                            #print(type(i))
+                            if type(i) == torch.Tensor:
+                                #print(i.shape)
+                                new_grads.append(i.detach().reshape(-1))
+                
+                        #grads_to_save = grads[0].detach().reshape(-1) # grads[0] are mBERT parameters (?)
+                        grads_to_save = torch.hstack(new_grads) # getting all the parameters
+                        #print(f"Shape of grads to save", grads_to_save.shape)
 
-                    language_grads = torch.cat([language_grads.cpu(), grads_to_save.cpu()], dim=-1) # Updates*grad_len in the last update
+                        language_grads = torch.cat([language_grads.cpu(), grads_to_save.cpu()], dim=-1) # Updates*grad_len in the last update
 
                     #print(gradients_for_ni.shape)
                     ### NI end
@@ -220,10 +221,11 @@ def main():
                     torch.cuda.empty_cache()
             
             # NI start
-            language_grads = language_grads.reshape(-1, UPDATES) # setup for taking the average
-            language_grads = torch.mean(language_grads, dim = 1) # number of gradients x 1
-            #print("Language grads shape", language_grads.shape)
-            episode_grads.append(language_grads.detach().numpy())
+            if (iteration+1)%args.save_every==0:
+                language_grads = language_grads.reshape(-1, UPDATES) # setup for taking the average
+                language_grads = torch.mean(language_grads, dim = 1) # number of gradients x 1
+                #print("Language grads shape", language_grads.shape)
+                episode_grads.append(language_grads.detach().numpy())
             #torch.save()
             # NI end
 
@@ -248,12 +250,13 @@ def main():
             # print(f"[INFO]: Saving the gradients with shape {save_this.shape}")
             # torch.save(save_this, f"saved_grads/epiosde_grad{iteration}_upd{UPDATES}_suppSize{args.support_set_size}")
 
-        epi_grads = np.array(episode_grads)
-        print("[INFO]: Calculating cosine similarity matrix ...")
-        cos_matrix = cosine_similarity(epi_grads)
-        #print("Cos sim matrix shape", cos_matrix.shape)
-        cos_matrices.append(np.array(cos_matrix)) 
-        print("Cos matrices shape", np.array(cos_matrices).shape)
+        if (iteration+1)%args.save_every==0:
+            epi_grads = np.array(episode_grads)
+            print("[INFO]: Calculating cosine similarity matrix ...")
+            cos_matrix = cosine_similarity(epi_grads)
+            #print("Cos sim matrix shape", cos_matrix.shape)
+            cos_matrices.append(np.array(cos_matrix)) 
+            print("Cos matrices shape", np.array(cos_matrices).shape)
         #print(f"[INFO]: Saving the similarity matrix with shape {cos_matrix.shape}")
         #np.save(f"saved_grads/epiosde_grad{iteration}_upd{UPDATES}_suppSize{args.support_set_size}")
             
@@ -287,7 +290,7 @@ def main():
         # Save the gradients in case OOM occurs
         # Can't escape OOM
 
-        if iteration%10==0: # not to slow down a lot
+        if (iteration+1)%args.save_every==0:# not to slow down a lot
             
             save_this = np.array(cos_matrices)
 

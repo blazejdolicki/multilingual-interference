@@ -3,7 +3,7 @@
 This file Meta-Trains on 7 languages
 And validates on Bulgarian
 """
-from naming_conventions
+import naming_conventions
 from get_language_dataset import get_language_dataset
 from get_default_params import get_params
 from ourmaml import MAML, maml_update

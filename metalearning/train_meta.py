@@ -185,7 +185,7 @@ def main():
             learner = meta_m.clone()
 
             # Sample two batches
-            support_set = next(iter(task_generator))
+            support_set = next(task_generator)
             support_set = move_to_device(support_set,torch.device('cuda'))
             if SKIP_UPDATE == 0.0 or torch.rand(1) > SKIP_UPDATE:
                 for mini_epoch in range(UPDATES):
@@ -230,7 +230,7 @@ def main():
             # NI end
 
             del support_set
-            query_set = next(iter(task_generator))
+            query_set = next(task_generator)
             query_set = move_to_device(query_set,torch.device('cuda'))
 
             eval_loss = learner.forward(**query_set)["loss"]

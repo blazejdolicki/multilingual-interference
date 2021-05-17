@@ -226,7 +226,7 @@ def main():
                             #print(type(i))
                             if type(i) == torch.Tensor:
                                 #print(i.shape)
-                                new_grads.append(i.detach().reshape(-1))
+                                new_grads.append(i.detach().cpu().reshape(-1))
                 
                         #grads_to_save = grads[0].detach().reshape(-1) # grads[0] are mBERT parameters (?)
                         grads_to_save = torch.hstack(new_grads) # getting all the parameters
@@ -249,7 +249,7 @@ def main():
                 else: # args.accumulation_mode=="sum"
                     language_grads = torch.sum(language_grads, dim = 1) # number of gradients x 1
                 
-                episode_grads.append(language_grads.detach().numpy())
+                episode_grads.append(language_grads.detach().cpu().numpy())
 
             ### NI end
 

@@ -183,7 +183,7 @@ def main():
     
            
     for iteration in range(EPISODES):
-        print(f"[INFO]: Starting episode {iteration}", flush=True)
+        print(f"[INFO]: Starting episode {iteration}\n\n", flush=True)
         iteration_loss = 0.0
         ### NI START
         episode_grads = [] # store the gradients of an episode for all languages

@@ -55,7 +55,7 @@ def main():
     Path("saved_models").mkdir(parents=True, exist_ok=True)
 
     print(f"Using accumulation mode {args.accumulation_mode} for gradient accumulation")
-    
+    device = torch.device('cuda')
 
     training_tasks = []
     torch.cuda.empty_cache()
@@ -192,7 +192,7 @@ def main():
         for j, task_generator in enumerate(training_tasks):
 
             ### NI start
-            language_grads = torch.Tensor()
+            language_grads = torch.Tensor()#.to(device=device)
             ### NI end
 
             learner = meta_m.clone()
@@ -220,36 +220,43 @@ def main():
                     grads = autograd.grad(inner_loss, learner.parameters(), create_graph=False, allow_unused=True)
                     maml_update(learner, lr=args.inner_lr_decoder, lr_small=args.inner_lr_bert, grads=grads)        
 
-                    if (iteration+1)%args.save_every==0:
-                        new_grads = []# filters out None grads
-                        for i in grads:
-                            #print(type(i))
-                            if type(i) == torch.Tensor:
-                                #print(i.shape)
-                                new_grads.append(i.detach().reshape(-1))
-                
-                        #grads_to_save = grads[0].detach().reshape(-1) # grads[0] are mBERT parameters (?)
-                        grads_to_save = torch.hstack(new_grads) # getting all the parameters
-                        #print(f"Shape of grads to save", grads_to_save.shape)
-
-                        language_grads = torch.cat([language_grads.cpu(), grads_to_save.cpu()], dim=-1) # Updates*grad_len in the last update
 
                     #print(gradients_for_ni.shape)
                     ### NI end
 
                     del inner_loss
                     torch.cuda.empty_cache()
+
+                ### NI start
+                if (iteration+1)%args.save_every==0:
+                        new_grads = []# filters out None grads
+                        for i in grads:
+                            #print(type(i))
+                            if type(i) == torch.Tensor:
+                                #print(i.shape)
+                                #new_grads.append(i.detach().reshape(-1))
+                                new_grads.append(i.reshape(-1))
+                
+                        #grads_to_save = grads[0].detach().reshape(-1) # grads[0] are mBERT parameters (?)
+                        grads_to_save = torch.hstack(new_grads) # getting all the parameters
+                        #print(f"Shape of grads to save", grads_to_save.shape)
+
+                        #language_grads = torch.cat([language_grads.cpu(), grads_to_save.cpu()], dim=-1) # Updates*grad_len in the last update
+                        language_grads = torch.cat([language_grads.cpu(), grads_to_save.cpu()], dim=-1) # Updates*grad_len in the last update
             
+                ### NI end
+
             ### NI start
             if (iteration+1)%args.save_every==0:
-                language_grads = language_grads.reshape(-1, UPDATES) # setup for taking the average
+                language_grads = language_grads.reshape(-1) # setup for taking the average
 
-                if args.accumulation_mode=="mean":
-                    language_grads = torch.mean(language_grads, dim = 1) # number of gradients x 1
-                else: # args.accumulation_mode=="sum"
-                    language_grads = torch.sum(language_grads, dim = 1) # number of gradients x 1
+                # if args.accumulation_mode=="mean":
+                #     language_grads = torch.mean(language_grads, dim = 1) # number of gradients x 1
+                # else: # args.accumulation_mode=="sum"
+                #     language_grads = torch.sum(language_grads, dim = 1) # number of gradients x 1
                 
-                episode_grads.append(language_grads.detach().numpy())
+                #episode_grads.append(language_grads.detach().numpy())
+                episode_grads.append(language_grads)
 
             ### NI end
 
@@ -280,24 +287,42 @@ def main():
             # print(f"[INFO]: Saving the gradients with shape {save_this.shape}")
             # torch.save(save_this, f"saved_grads/epiosde_grad{iteration}_upd{UPDATES}_suppSize{args.support_set_size}")
 
-        if (iteration+1)%args.save_every==0:
-            epi_grads = np.array(episode_grads)
-            print("[INFO]: Calculating cosine similarity matrix ...")
-            cos_matrix = cosine_similarity(epi_grads)
-            #print("Cos sim matrix shape", cos_matrix.shape)
-            cos_matrices.append(np.array(cos_matrix)) 
-            print("Cos matrices shape", np.array(cos_matrices).shape)
         #print(f"[INFO]: Saving the similarity matrix with shape {cos_matrix.shape}")
         #np.save(f"saved_grads/epiosde_grad{iteration}_upd{UPDATES}_suppSize{args.support_set_size}")
             
         #### NI end
-
+        #grad_copy = torch.stack((episode_grads)).detach() # detaching the grad
         # Sum up and normalize over all 7 losses
         iteration_loss /= len(training_tasks)
         optimizer.zero_grad()
         iteration_loss.backward()
         optimizer.step()
         scheduler.step()
+
+        if (iteration+1)%args.save_every==0:
+            #epi_grads = np.array(episode_grads)
+            #for language_grad in episode_grads:
+            #    language_grads_detachted
+            #    for grad in language_grads:
+
+           # epi_grads = torch.Tensor(episode_grads)#.detach()
+            epi_grads = []
+
+            # for epi_grad in episode_grads:
+            #     lan_grads_detachted = []
+            #     print(f"epi grad shape {epi_grad.shape}")
+            #     for lan_grad in epi_grad:
+            #         #print(f"language gradient shape{lan_grad.shape}")
+            #         lan_grads_detachted.append(lan_grad.detach())
+                # epi_grad.append(lan_grads_detachted)
+
+            epi_grads = torch.stack((episode_grads))#.detach()
+            #print(f"Is detachted vector different than one that's not {torch.equal(epi_grads, grad_copy)}")
+            print("[INFO]: Calculating cosine similarity matrix ...")
+            cos_matrix = cosine_similarity(epi_grads)
+            #print("Cos sim matrix shape", cos_matrix.shape)
+            cos_matrices.append(np.array(cos_matrix)) 
+            print("Cos matrices shape", np.array(cos_matrices).shape)
 
         # Bookkeeping
         with torch.no_grad():

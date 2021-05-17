@@ -183,7 +183,7 @@ def main():
     
            
     for iteration in range(EPISODES):
-        print(f"[INFO]: Starting episode {iteration}", flush=True)
+        print(f"[INFO]: Starting episode {iteration}\n\n", flush=True)
         iteration_loss = 0.0
         ### NI START
         episode_grads = [] # store the gradients of an episode for all languages
@@ -217,7 +217,7 @@ def main():
                     
                     # learner.adapt(inner_loss, first_order=True)
                     # The following two lines  implemnt learning.adapt. See our_maml.py for details
-                    grads = autograd.grad(inner_loss, learner.parameters(), create_graph=False, allow_unused=True)
+                    grads = autograd.grad(inner_loss, learner.parameters(), create_graph=False, retain_graph=False, allow_unused=True)
                     maml_update(learner, lr=args.inner_lr_decoder, lr_small=args.inner_lr_bert, grads=grads)        
 
 
@@ -243,8 +243,12 @@ def main():
 
                         #language_grads = torch.cat([language_grads.cpu(), grads_to_save.cpu()], dim=-1) # Updates*grad_len in the last update
                         language_grads = torch.cat([language_grads.cpu(), grads_to_save.cpu()], dim=-1) # Updates*grad_len in the last update
-            
-                ### NI end
+
+                    #print(gradients_for_ni.shape)
+                    ### NI end
+
+            del support_set
+            torch.cuda.empty_cache()
 
             ### NI start
             if (iteration+1)%args.save_every==0:
@@ -260,13 +264,12 @@ def main():
 
             ### NI end
 
-            del support_set 
             try:
                 query_set = next(task_generator)
-            except StopIteration: #Exception called if iter reached its end.
-                #We create a new iterator to use instead
+            except StopIteration:  # Exception called if iter reached its end.
+                # We create a new iterator to use instead
                 training_tasks[j] = restart_iter(task_generator,args)
-                task_generator =training_tasks[j] 
+                task_generator = training_tasks[j]
                 query_set = next(task_generator)
             query_set = move_to_device(query_set,torch.device('cuda'))
 

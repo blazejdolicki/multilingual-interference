@@ -168,7 +168,18 @@ def main():
 
     # NI END
 
-
+    def restart_iter(task_generator,args): 
+        """ Restart the iter(Dataloader) by creating again the dataset.
+        This method is called when we looped through the whole data and want to start from the beginning.
+        """       
+        # Get the path to datat like: data/ud-treebanks-v2.3/UD_Arabic-PADT/ar_padt-ud-train.conllu
+        task_split = task_generator._dataset._file_path.split('/')
+        lan = task_split[-2] # Language in capitals
+        # Language in lower case, remove -train.collu, -dev.conllu, -test.conllu
+        lan_lowercase_ = task_split[-1].split('-')[0]+'-ud'
+        return get_language_dataset(lan, lan_lowercase_, seed=args.seed, support_set_size=args.support_set_size)
+    
+           
     for iteration in range(EPISODES):
         print(f"[INFO]: Starting episode {iteration}", flush=True)
         iteration_loss = 0.0
@@ -185,7 +196,14 @@ def main():
             learner = meta_m.clone()
 
             # Sample two batches
-            support_set = next(task_generator)
+            try:
+                support_set = next(task_generator) 
+            except StopIteration: #Exception called if iter reached its end.
+                #We create a new iterator to use instead
+                training_tasks[j] = restart_iter(task_generator,args)                
+                task_generator =training_tasks[j] 
+                support_set = next(task_generator) #Sample from new iter
+
             support_set = move_to_device(support_set,torch.device('cuda'))
             if SKIP_UPDATE == 0.0 or torch.rand(1) > SKIP_UPDATE:
                 for mini_epoch in range(UPDATES):
@@ -233,8 +251,14 @@ def main():
 
             ### NI end
 
-            del support_set
-            query_set = next(task_generator)
+            del support_set 
+            try:
+                query_set = next(task_generator)
+            except StopIteration: #Exception called if iter reached its end.
+                #We create a new iterator to use instead
+                training_tasks[j] = restart_iter(task_generator,args)
+                task_generator =training_tasks[j] 
+                query_set = next(task_generator)
             query_set = move_to_device(query_set,torch.device('cuda'))
 
             eval_loss = learner.forward(**query_set)["loss"]

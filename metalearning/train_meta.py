@@ -299,10 +299,10 @@ def main():
             save_this = np.array(cos_matrices)
 
             # Delete the last temp file
-            for filename in glob.glob("./cos_matrices/temp_allGrads_episode_cos_mat*"): # remove the previoustemp grads
+            for filename in glob.glob(f"./cos_matrices/temp_allGrads_episode_upd{UPDATES}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}_cos_mat{iteration}*"): # remove the previoustemp grads
                 os.remove(filename) 
 
-            np.save(f"cos_matrices/temp_allGrads_episode_cos_mat{iteration}_upd{UPDATES}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}",
+            np.save(f"cos_matrices/temp_allGrads_episode_upd{UPDATES}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}_cos_mat{iteration}",
                     save_this)
             torch.cuda.empty_cache()
 
@@ -314,9 +314,12 @@ def main():
     # print(f"[INFO]: Saving the gradients with shape {save_this.shape}")
     # torch.save(save_this, f"saved_grads/gradients_for_ni_epi{EPISODES}_upd{UPDATES}_suppSize{args.support_set_size}")
 
+    # Delete the last temp file
+    for filename in glob.glob(f"./cos_matrices/temp_allGrads_episode_upd{UPDATES}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}*"): # remove the previoustemp grads
+        os.remove(filename) 
     cos_matrices = np.array(cos_matrices)
     print(f"[INFO]: Saving the similarity matrix with shape {cos_matrices.shape}")
-    np.save(f"cos_matrices/allGrads_episode_cos_mat{EPISODES}_upd{UPDATES}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}", cos_matrices)
+    np.save(f"cos_matrices/allGrads_episode_upd{UPDATES}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}_cos_mat{EPISODES}", cos_matrices)
 
     ### NI END
     print("Done training ... archiving three models!")

@@ -183,4 +183,4 @@ def get_language_dataset(
     # groups = lazy_groups_of(my_loader
 # , 1)# -R hardcoded batch of size 1?
     
-    return my_loader
+    return iter(my_loader)

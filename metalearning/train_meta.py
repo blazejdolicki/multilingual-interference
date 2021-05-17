@@ -118,6 +118,8 @@ def main():
             META_LR_BERT,
             UPDATES,
             args.seed,
+            args.language_order,
+            args.accumulation_mode
         ]
     ]
     MODEL_SAVE_NAME = "_".join(param_list)

@@ -217,10 +217,10 @@ def main():
                     
                     # learner.adapt(inner_loss, first_order=True)
                     # The following two lines  implemnt learning.adapt. See our_maml.py for details
-                    grads = autograd.grad(inner_loss, learner.parameters(), create_graph=False, allow_unused=True)
+                    grads = autograd.grad(inner_loss, learner.parameters(), create_graph=False, retain_graph=False, allow_unused=True)
                     maml_update(learner, lr=args.inner_lr_decoder, lr_small=args.inner_lr_bert, grads=grads)        
 
-                    if (iteration+1)%args.save_every==0:
+                    if (iteration+1) % args.save_every==0:
                         new_grads = []# filters out None grads
                         for i in grads:
                             #print(type(i))
@@ -257,10 +257,10 @@ def main():
 
             try:
                 query_set = next(task_generator)
-            except StopIteration: #Exception called if iter reached its end.
-                #We create a new iterator to use instead
+            except StopIteration:  # Exception called if iter reached its end.
+                # We create a new iterator to use instead
                 training_tasks[j] = restart_iter(task_generator,args)
-                task_generator =training_tasks[j] 
+                task_generator = training_tasks[j]
                 query_set = next(task_generator)
             query_set = move_to_device(query_set,torch.device('cuda'))
 

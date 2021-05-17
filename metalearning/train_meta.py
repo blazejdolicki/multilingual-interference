@@ -47,11 +47,15 @@ def main():
     parser.add_argument("--inner_lr_bert", default=0.001, type=float, help="Inner learner LR for BERT")
     parser.add_argument("--model_dir", default=None, type=str, help="Directory from where to start training. Should be a 'clean' model for MAML and a pretrained model for X-MAML.")
     parser.add_argument("--language_order", default=0, type=int, help="The order of languages in the inner loop")
-    parser.add_argument("--save_every", default=5, type=int, help="Save the gradient conflicts every save_every episodes ")
+    parser.add_argument("--save_every", default=10, type=int, help="Save the gradient conflicts every save_every episodes ")
+    parser.add_argument("--accumulation_mode", default="sum", type=str, help="What gradient accumulation strategy to use", choices=["mean", "sum"])
     args = parser.parse_args()
 
     from pathlib import Path
     Path("saved_models").mkdir(parents=True, exist_ok=True)
+
+    print(f"Using accumulation mode {args.accumulation_mode} for gradient accumulation")
+    
 
     training_tasks = []
     torch.cuda.empty_cache()
@@ -156,9 +160,9 @@ def main():
 
     # NI START
     print(f"[INFO]: Total amount of training tasks is {len(training_tasks)}")
-    gradients_for_ni = torch.Tensor()
+    # gradients_for_ni = torch.Tensor()
 
-    gradients_for_ni = [] # in the end it will store the following info in each dim
+    # gradients_for_ni = [] # in the end it will store the following info in each dim
     cos_matrices = []
     # num_episodes x grad_len x num_languages
 
@@ -174,13 +178,9 @@ def main():
         """Inner adaptation loop"""
         for j, task_generator in enumerate(training_tasks):
 
-            # NI start
+            ### NI start
             language_grads = torch.Tensor()
-            #print(f"[INFO:] Meta-training language", train_languages[j])
-            #gradients_for_ni = torch.Tensor()
-
-            #print(f"[INFO]: Training taksk has length {len(task_generator)}")
-            # NI end
+            ### NI end
 
             learner = meta_m.clone()
 
@@ -220,14 +220,18 @@ def main():
                     del inner_loss
                     torch.cuda.empty_cache()
             
-            # NI start
+            ### NI start
             if (iteration+1)%args.save_every==0:
                 language_grads = language_grads.reshape(-1, UPDATES) # setup for taking the average
-                language_grads = torch.mean(language_grads, dim = 1) # number of gradients x 1
-                #print("Language grads shape", language_grads.shape)
+
+                if args.accumulation_mode=="mean":
+                    language_grads = torch.mean(language_grads, dim = 1) # number of gradients x 1
+                else: # args.accumulation_mode=="sum"
+                    language_grads = torch.sum(language_grads, dim = 1) # number of gradients x 1
+                
                 episode_grads.append(language_grads.detach().numpy())
-            #torch.save()
-            # NI end
+
+            ### NI end
 
             del support_set
             query_set = next(task_generator)
@@ -298,7 +302,8 @@ def main():
             for filename in glob.glob("./cos_matrices/temp_allGrads_episode_cos_mat*"): # remove the previoustemp grads
                 os.remove(filename) 
 
-            np.save(f"cos_matrices/temp_allGrads_episode_cos_mat{iteration}_upd{UPDATES}_suppSize{args.support_set_size}_order{args.language_order}", save_this)
+            np.save(f"cos_matrices/temp_allGrads_episode_cos_mat{iteration}_upd{UPDATES}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}",
+                    save_this)
             torch.cuda.empty_cache()
 
         ### NI END
@@ -311,7 +316,7 @@ def main():
 
     cos_matrices = np.array(cos_matrices)
     print(f"[INFO]: Saving the similarity matrix with shape {cos_matrices.shape}")
-    np.save(f"cos_matrices/allGrads_episode_cos_mat{EPISODES}_upd{UPDATES}_suppSize{args.support_set_size}_order{args.language_order}", cos_matrices)
+    np.save(f"cos_matrices/allGrads_episode_cos_mat{EPISODES}_upd{UPDATES}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}", cos_matrices)
 
     ### NI END
     print("Done training ... archiving three models!")

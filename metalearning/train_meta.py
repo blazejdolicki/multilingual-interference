@@ -239,7 +239,10 @@ def main():
 
                     del inner_loss
                     torch.cuda.empty_cache()
-            
+
+            del support_set
+            torch.cuda.empty_cache()
+
             ### NI start
             if (iteration+1)%args.save_every==0:
                 language_grads = language_grads.reshape(-1, UPDATES) # setup for taking the average
@@ -250,10 +253,8 @@ def main():
                     language_grads = torch.sum(language_grads, dim = 1) # number of gradients x 1
                 
                 episode_grads.append(language_grads.detach().cpu().numpy())
-
             ### NI end
 
-            del support_set 
             try:
                 query_set = next(task_generator)
             except StopIteration: #Exception called if iter reached its end.

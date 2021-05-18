@@ -170,8 +170,10 @@ def main():
                 )
 
             for BATCH in range(BATCHES):
+
+
                 try:
-                    support_set = next(iter(val_iterator))                    
+                    support_set = next(val_iterator)                   
                     support_set = move_to_device(support_set,torch.device('cuda'))
                 except StopIteration:
                     test_file = get_test_set(
@@ -192,7 +194,7 @@ def main():
                         validate=True,
                         bs=args.support_set_size * args.batches,
                     )
-                    support_set = next(iter(val_iterator))
+                    support_set = next(val_iterator)
                     support_set = move_to_device(support_set,torch.device('cuda'))
 
                 NO += 1

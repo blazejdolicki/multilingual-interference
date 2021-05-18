@@ -222,36 +222,36 @@ def main():
                     del inner_loss
                     torch.cuda.empty_cache()
 
-                if (iteration+1) % args.save_every == 0:  # NI
-                        new_grads = []  # filters out None grads
-                        for i in grads:
-                            if type(i) == torch.Tensor:
-                                # print(i.shape)
-                                # new_grads.append(i.detach().reshape(-1))
-                                new_grads.append(i.reshape(-1))
+                # if (iteration+1) % args.save_every == 0:  # NI
+                #         new_grads = []  # filters out None grads
+                #         for i in grads:
+                #             if type(i) == torch.Tensor:
+                #                 # print(i.shape)
+                #                 # new_grads.append(i.detach().reshape(-1))
+                #                 new_grads.append(i.reshape(-1))
                 
-                        grads_to_save = torch.hstack(new_grads)  # getting all the parameters
+                #         grads_to_save = torch.hstack(new_grads)  # getting all the parameters
 
-                        # language_grads = torch.cat([language_grads.cpu(), grads_to_save.cpu()], dim=-1) # Updates*grad_len in the last update
-                        language_grads = torch.cat([language_grads.cpu(), grads_to_save.cpu()], dim=-1)  # Updates*grad_len in the last update
+                #         # language_grads = torch.cat([language_grads.cpu(), grads_to_save.cpu()], dim=-1) # Updates*grad_len in the last update
+                #         language_grads = torch.cat([language_grads.cpu(), grads_to_save.cpu()], dim=-1)  # Updates*grad_len in the last update
 
-                        del grads_to_save
-                        del new_grads
-                        torch.cuda.empty_cache()
+                #         del grads_to_save
+                #         del new_grads
+                #         torch.cuda.empty_cache()
 
             del support_set
             torch.cuda.empty_cache()
 
-            if (iteration+1)%args.save_every == 0:  # NI
-                language_grads = language_grads.reshape(-1) # setup for taking the average
+            # if (iteration+1)%args.save_every == 0:  # NI
+            #     language_grads = language_grads.reshape(-1) # setup for taking the average
 
-                # if args.accumulation_mode=="mean":
-                #     language_grads = torch.mean(language_grads, dim = 1) # number of gradients x 1
-                # else: # args.accumulation_mode=="sum"
-                #     language_grads = torch.sum(language_grads, dim = 1) # number of gradients x 1
+            #     # if args.accumulation_mode=="mean":
+            #     #     language_grads = torch.mean(language_grads, dim = 1) # number of gradients x 1
+            #     # else: # args.accumulation_mode=="sum"
+            #     #     language_grads = torch.sum(language_grads, dim = 1) # number of gradients x 1
                 
-                # episode_grads.append(language_grads.detach().numpy())
-                episode_grads.append(language_grads)
+            #     # episode_grads.append(language_grads.detach().numpy())
+            #     episode_grads.append(language_grads)
 
             try:
                 query_set = next(task_generator)
@@ -291,7 +291,7 @@ def main():
         optimizer.step()
         scheduler.step()
 
-        if (iteration+1) % args.save_every == 0:
+        # if (iteration+1) % args.save_every == 0:
             # epi_grads = np.array(episode_grads)
             # for language_grad in episode_grads:
             #    language_grads_detachted
@@ -308,19 +308,19 @@ def main():
             #         lan_grads_detachted.append(lan_grad.detach())
             # epi_grad.append(lan_grads_detachted)
 
-            epi_grads = torch.stack((episode_grads))#.detach()
-            # print(f"Is detachted vector different than one that's not {torch.equal(epi_grads, grad_copy)}")
-            print("[INFO]: Calculating cosine similarity matrix ...")
-            cos_matrix = cosine_similarity(epi_grads)
-            # print("Cos sim matrix shape", cos_matrix.shape)
-            # cos_matrices.append(np.array(cos_matrix))
-            cos_matrices.append(cos_matrix.detach().cpu().numpy())  # SHANE helpt
+            # epi_grads = torch.stack((episode_grads))#.detach()
+            # # print(f"Is detachted vector different than one that's not {torch.equal(epi_grads, grad_copy)}")
+            # print("[INFO]: Calculating cosine similarity matrix ...")
+            # cos_matrix = cosine_similarity(epi_grads)
+            # # print("Cos sim matrix shape", cos_matrix.shape)
+            # # cos_matrices.append(np.array(cos_matrix))
+            # cos_matrices.append(cos_matrix.detach().cpu().numpy())  # SHANE helpt
 
-            print("Cos matrices shape", np.array(cos_matrices).shape)
+            # print("Cos matrices shape", np.array(cos_matrices).shape)
 
-            del episode_grads
-            del epi_grads
-            torch.cuda.empty_cache()
+            # del episode_grads
+            # del epi_grads
+            # torch.cuda.empty_cache()
 
         # Bookkeeping
         with torch.no_grad():
@@ -331,35 +331,35 @@ def main():
         del iteration_loss
         torch.cuda.empty_cache()
 
-        if iteration + 1 in [1, 500, 1500, 2000] and not (iteration + 1 == 500 and DOING_MAML):
+        if iteration + 1 in [1,10,20,30,40,50,60,70, 500, 1500, 2000] and not (iteration + 1 == 500 and DOING_MAML):
             backup_path = os.path.join(MODEL_VAL_DIR, "model" + str(iteration + 1) + ".th")
             torch.save(meta_m.module.state_dict(), backup_path)
         
         # NI START
         # Save the gradients in case OOM occurs
         # Can't escape OOM
-        if (iteration+1) % args.save_every == 0:  # not to slow down a lot
+        # if (iteration+1) % args.save_every == 0:  # not to slow down a lot
             
-            save_this = np.array(cos_matrices)
+        #     save_this = np.array(cos_matrices)
 
-            # Delete the last temp file
-            for filename in glob.glob(f"./cos_matrices/temp_allGrads_episode_upd{UPDATES}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}_cos_mat{iteration}*"): # remove the previoustemp grads
-                os.remove(filename) 
+        #     # Delete the last temp file
+        #     for filename in glob.glob(f"./cos_matrices/temp_allGrads_episode_upd{UPDATES}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}_cos_mat{iteration}*"): # remove the previoustemp grads
+        #         os.remove(filename) 
 
-            np.save(f"cos_matrices/temp_allGrads_episode_upd{UPDATES}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}_cos_mat{iteration}",
-                    save_this)
-            torch.cuda.empty_cache()
+        #     np.save(f"cos_matrices/temp_allGrads_episode_upd{UPDATES}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}_cos_mat{iteration}",
+        #             save_this)
+        #     torch.cuda.empty_cache()
 
     # save_this = torch.from_numpy(np.array(gradients_for_ni))
     # print(f"[INFO]: Saving the gradients with shape {save_this.shape}")
     # torch.save(save_this, f"saved_grads/gradients_for_ni_epi{EPISODES}_upd{UPDATES}_suppSize{args.support_set_size}")
 
     # Delete the last temp file
-    for filename in glob.glob(f"./cos_matrices/temp_allGrads_episode_upd{UPDATES}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}*"): # remove the previoustemp grads
-        os.remove(filename) 
-    cos_matrices = np.array(cos_matrices)
-    print(f"[INFO]: Saving the similarity matrix with shape {cos_matrices.shape}")
-    np.save(f"cos_matrices/allGrads_episode_upd{UPDATES}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}_cos_mat{EPISODES}", cos_matrices)
+    # for filename in glob.glob(f"./cos_matrices/temp_allGrads_episode_upd{UPDATES}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}*"): # remove the previoustemp grads
+    #     os.remove(filename) 
+    # cos_matrices = np.array(cos_matrices)
+    # print(f"[INFO]: Saving the similarity matrix with shape {cos_matrices.shape}")
+    # np.save(f"cos_matrices/allGrads_episode_upd{UPDATES}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}_cos_mat{EPISODES}", cos_matrices)
 
     print("Done training ... archiving three models!")
     for i in [1,500, 600, 900, 1200, 1500, 1800, 2000, 1500]:

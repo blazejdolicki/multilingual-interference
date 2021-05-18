@@ -186,7 +186,6 @@ def main():
         print(f'allocated : {a}')
         print(f'free      : {f}\n')
 
-
         iteration_loss = 0.0
         episode_grads = []  # NI store the gradients of an episode for all languages
 
@@ -314,7 +313,9 @@ def main():
             print("[INFO]: Calculating cosine similarity matrix ...")
             cos_matrix = cosine_similarity(epi_grads)
             # print("Cos sim matrix shape", cos_matrix.shape)
-            cos_matrices.append(np.array(cos_matrix)) 
+            # cos_matrices.append(np.array(cos_matrix))
+            cos_matrices.append(cos_matrix.detach().cpu().numpy())  # SHANE helpt
+
             print("Cos matrices shape", np.array(cos_matrices).shape)
 
             del episode_grads

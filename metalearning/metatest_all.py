@@ -107,8 +107,8 @@ def main():
     WHERE_TO_SAVE = "_".join(paramlist)
     USE_ADAM = args.optimizer == "adam"
 
-    print("Saving all to directory", WHERE_TO_SAVE)
-    print("Running from", MODEL_DIR, "with learning rates", LR_DECODER, LR_BERT)
+    print("Saving all to directory", WHERE_TO_SAVE, flush=True)
+    print("Running from", MODEL_DIR, "with learning rates", LR_DECODER, LR_BERT, flush=True)
     subprocess.run(["mkdir", WHERE_TO_SAVE])
 
     # The languages on which to evaluate
@@ -227,7 +227,7 @@ def main():
             )
 
             # Clean up
-            print("Wrote", current_output_file, "removing", SERIALIZATION_DIR)
+            print("Wrote", current_output_file, "removing", SERIALIZATION_DIR, flush=True)
             subprocess.run(["rm", "-r", "-f", SERIALIZATION_DIR])
 
             del m

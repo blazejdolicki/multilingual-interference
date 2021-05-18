@@ -92,12 +92,9 @@ def main():
 
     # Filenames
     MODEL_FILE = (args.model_dir if args.model_dir is not None else "logs/bert_finetune_en/2021.05.13_01.56.30")
-    train_params = get_params("metalearning", args.seed)
-
     maml_string = "saved_models/MAML" if DOING_MAML else "saved_models/XMAML"
     param_list = [
-        str(z)
-        for z in [
+        str(z) for z in [
             maml_string,
             INNER_LR_DECODER,
             INNER_LR_BERT,
@@ -197,13 +194,20 @@ def main():
 
                     torch.cuda.empty_cache()
 
+                    # build in a check if the CUDA runs out, and if so changes the support set
                     try:
                         inner_loss = learner.forward(**support_set)["loss"]
                     except RuntimeError:
-                        print(f'[ERROR]: Encountered a runtime error at iteration {iteration} for training task {j}')
-                        break
+                        print(f'[ERROR]: Encountered a runtime error at iteration {iteration} for training task {j}. Sampeling new support set.')
+                        try:
+                            support_set = next(task_generator)
+                        except StopIteration:  # Exception called if iter reached its end.
+                            # We create a new iterator to use instead
+                            training_tasks[j] = restart_iter(task_generator, args)
+                            task_generator = training_tasks[j]
+                            support_set = next(task_generator)  # Sample from new iter
 
-                    # NI - The following two lines  implement learning.adapt. See our_maml.py for details
+                    # NI - The following two lines implement learning.adapt. See our_maml.py for details
                     # learner.adapt(inner_loss, first_order=True)
                     grads = autograd.grad(inner_loss, learner.parameters(), create_graph=False, retain_graph=False, allow_unused=True)
                     maml_update(learner, lr=args.inner_lr_decoder, lr_small=args.inner_lr_bert, grads=grads)        
@@ -218,7 +222,7 @@ def main():
                                     new_grads.append(i.detach().cpu().reshape(-1))
 
                             grads_to_save = torch.hstack(new_grads).detach().cpu()  # getting all the parameters
-                            language_grads = torch.cat([language_grads.cpu(), grads_to_save], dim=-1)  # Updates * grad_len in the last update
+                            language_grads = torch.cat([language_grads, grads_to_save], dim=-1)  # Updates * grad_len in the last update
 
                             del grads_to_save
                             del new_grads

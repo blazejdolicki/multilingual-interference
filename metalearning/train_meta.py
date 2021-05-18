@@ -48,7 +48,7 @@ def main():
     parser.add_argument("--inner_lr_bert", default=0.001, type=float, help="Inner learner LR for BERT")
     parser.add_argument("--model_dir", default=None, type=str, help="Directory from where to start training. Should be a 'clean' model for MAML and a pretrained model for X-MAML.")
     parser.add_argument("--language_order", default=0, type=int, help="The order of languages in the inner loop")
-    parser.add_argument("--save_every", default=10, type=int, help="Save the gradient conflicts every save_every episodes ")
+    parser.add_argument("--save_every", default=4, type=int, help="Save the gradient conflicts every save_every episodes ")
     parser.add_argument("--accumulation_mode", default="sum", type=str, help="What gradient accumulation strategy to use", choices=["mean", "sum"])
     args = parser.parse_args()
 

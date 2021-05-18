@@ -230,7 +230,7 @@ def main():
                                 # new_grads.append(i.detach().reshape(-1))
                                 new_grads.append(i.reshape(-1))
                 
-                        grads_to_save = torch.hstack(new_grads)  # getting all the parameters
+                        grads_to_save = torch.hstack(new_grads).detach().cpu().numpy()  # getting all the parameters
 
                         # language_grads = torch.cat([language_grads.cpu(), grads_to_save.cpu()], dim=-1) # Updates*grad_len in the last update
                         language_grads = torch.cat([language_grads.cpu(), grads_to_save.cpu()], dim=-1)  # Updates*grad_len in the last update
@@ -251,7 +251,7 @@ def main():
                 #     language_grads = torch.sum(language_grads, dim = 1) # number of gradients x 1
                 
                 # episode_grads.append(language_grads.detach().numpy())
-                episode_grads.append(language_grads)
+                episode_grads.append(language_grads.detach().cpu().numpy())
 
             try:
                 query_set = next(task_generator)
@@ -308,10 +308,10 @@ def main():
             #         lan_grads_detachted.append(lan_grad.detach())
             # epi_grad.append(lan_grads_detachted)
 
-            epi_grads = torch.stack((episode_grads))#.detach()
+            epi_grads = torch.stack(episode_grads).detach().cpu().numpy()
             # print(f"Is detachted vector different than one that's not {torch.equal(epi_grads, grad_copy)}")
             print("[INFO]: Calculating cosine similarity matrix ...")
-            cos_matrix = cosine_similarity(epi_grads.detach().cpu().numpy())  # SHANE helpt
+            cos_matrix = cosine_similarity(epi_grads)  # SHANE helpt
             # print("Cos sim matrix shape", cos_matrix.shape)
             # cos_matrices.append(np.array(cos_matrix))
             cos_matrices.append(cos_matrix)

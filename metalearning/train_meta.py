@@ -95,9 +95,6 @@ def main():
         args.model_dir
         if args.model_dir is not None
         else ("logs/bert_finetune_en/2021.05.13_01.56.30"
-            # "../backup/pretrained/english_expmix_deps_seed2/2020.07.30_18.50.07"
-            # if not DOING_MAML
-            # else "logs/english_expmix_tiny_deps2/2020.05.29_17.59.31"
         )
     )
     train_params = get_params("metalearning", args.seed)
@@ -177,7 +174,19 @@ def main():
         return get_language_dataset(lan, lan_lowercase_, seed=args.seed, support_set_size=args.support_set_size)
 
     for iteration in range(EPISODES):
-        print(f"[INFO]: Starting episode {iteration}\n\n", flush=True)
+        print(f"[INFO]: Starting episode {iteration}\n", flush=True)
+
+        t = torch.cuda.get_device_properties(0).total_memory
+        r = torch.cuda.memory_reserved(0)
+        a = torch.cuda.memory_allocated(0)
+        f = r - a  # free inside reserved
+
+        print(f'total     : {t}')
+        print(f'reserved  : {r}')
+        print(f'allocated : {a}')
+        print(f'free      : {f}\n')
+
+
         iteration_loss = 0.0
         episode_grads = []  # NI store the gradients of an episode for all languages
 
@@ -197,7 +206,9 @@ def main():
                 support_set = next(task_generator) #Sample from new iter
 
             support_set = move_to_device(support_set,torch.device('cuda'))
+
             if SKIP_UPDATE == 0.0 or torch.rand(1) > SKIP_UPDATE:
+
                 for mini_epoch in range(UPDATES):
 
                     torch.cuda.empty_cache()
@@ -220,12 +231,10 @@ def main():
                                 # new_grads.append(i.detach().reshape(-1))
                                 new_grads.append(i.reshape(-1))
                 
-                        # grads_to_save = grads[0].detach().reshape(-1) # grads[0] are mBERT parameters (?)
-                        grads_to_save = torch.hstack(new_grads) # getting all the parameters
-                        # print(f"Shape of grads to save", grads_to_save.shape)
+                        grads_to_save = torch.hstack(new_grads)  # getting all the parameters
 
-                        #language_grads = torch.cat([language_grads.cpu(), grads_to_save.cpu()], dim=-1) # Updates*grad_len in the last update
-                        language_grads = torch.cat([language_grads.cpu(), grads_to_save.cpu()], dim=-1) # Updates*grad_len in the last update
+                        # language_grads = torch.cat([language_grads.cpu(), grads_to_save.cpu()], dim=-1) # Updates*grad_len in the last update
+                        language_grads = torch.cat([language_grads.cpu(), grads_to_save.cpu()], dim=-1)  # Updates*grad_len in the last update
 
                         del grads_to_save
                         del new_grads
@@ -275,7 +284,7 @@ def main():
         #np.save(f"saved_grads/epiosde_grad{iteration}_upd{UPDATES}_suppSize{args.support_set_size}")
             
         #### NI end
-        #grad_copy = torch.stack((episode_grads)).detach() # detaching the grad
+        # grad_copy = torch.stack((episode_grads)).detach() # detaching the grad
         # Sum up and normalize over all 7 losses
         iteration_loss /= len(training_tasks)
         optimizer.zero_grad()
@@ -283,9 +292,9 @@ def main():
         optimizer.step()
         scheduler.step()
 
-        if (iteration+1)%args.save_every==0:
-            #epi_grads = np.array(episode_grads)
-            #for language_grad in episode_grads:
+        if (iteration+1) % args.save_every == 0:
+            # epi_grads = np.array(episode_grads)
+            # for language_grad in episode_grads:
             #    language_grads_detachted
             #    for grad in language_grads:
 

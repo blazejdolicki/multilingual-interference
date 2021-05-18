@@ -313,7 +313,12 @@ def main():
     np.save(f"cos_matrices/allGrads_episode_upd{UPDATES}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}_cos_mat{EPISODES}", cos_matrices)
 
     print("Done training ... archiving three models!")
-    for i in [last_iter]:
+    try:
+        print(last_iter) # last iter has not been defined
+    except:
+        last_iter = []
+
+    for i in [EPISODES]:
 
         filename = os.path.join(MODEL_VAL_DIR, "model" + str(i) + ".th")
 

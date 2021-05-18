@@ -212,7 +212,8 @@ def main():
                                 if type(i) == torch.Tensor:
                                     new_grads.append(i.detach().cpu().reshape(-1))
 
-                            grads_to_save = torch.hstack(new_grads).detach().cpu().numpy()  # getting all the parameters
+                            grads_to_save = torch.hstack(new_grads).detach().cpu()  # getting all the parameters
+                            print(type(grads_to_save), type(language_grads.cpu()))
                             language_grads = torch.cat([language_grads.cpu(), grads_to_save], dim=-1)  # Updates * grad_len in the last update
 
                             del grads_to_save

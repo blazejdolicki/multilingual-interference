@@ -165,7 +165,7 @@ def main():
         a = torch.cuda.memory_allocated(0)
         f = r - a  # free inside reserved
 
-        print(f'total     : {t}')
+        print(f'\ntotal     : {t}')
         print(f'reserved  : {r}')
         print(f'allocated : {a}')
         print(f'free      : {f}\n')
@@ -196,7 +196,12 @@ def main():
                 for mini_epoch in range(UPDATES):
 
                     torch.cuda.empty_cache()
-                    inner_loss = learner.forward(**support_set)["loss"]
+
+                    try:
+                        inner_loss = learner.forward(**support_set)["loss"]
+                    except RuntimeError:
+                        print(f'[ERROR]: Encountered a runtime error at iteration {iteration} for training task {j}')
+                        break
 
                     # NI - The following two lines  implement learning.adapt. See our_maml.py for details
                     # learner.adapt(inner_loss, first_order=True)
@@ -213,7 +218,6 @@ def main():
                                     new_grads.append(i.detach().cpu().reshape(-1))
 
                             grads_to_save = torch.hstack(new_grads).detach().cpu()  # getting all the parameters
-                            print(type(grads_to_save), type(language_grads.cpu()))
                             language_grads = torch.cat([language_grads.cpu(), grads_to_save], dim=-1)  # Updates * grad_len in the last update
 
                             del grads_to_save

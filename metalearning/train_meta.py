@@ -61,17 +61,17 @@ def main():
     torch.cuda.empty_cache()
 
     # 7 languages by default -R
-    if args.language_order == 0:
-        lan_ = naming_conventions.train_languages
-        lan_lowercase_ = naming_conventions.train_languages_lowercase
-
-    elif args.language_order == 1:
+    if args.language_order == 1:
         lan_ = naming_conventions.train_languages_order_1
         lan_lowercase_ = naming_conventions.train_languages_order_1_lowercase
 
     elif args.language_order == 2:
         lan_ = naming_conventions.train_languages_order_2
         lan_lowercase_ = naming_conventions.train_languages_order_2_lowercase
+
+    else:
+        lan_ = naming_conventions.train_languages
+        lan_lowercase_ = naming_conventions.train_languages_lowercase
 
     for lan, lan_l in zip(lan_, lan_lowercase_):
         if not ("indi" in lan and args.notaddhindi):
@@ -143,15 +143,10 @@ def main():
         train_params,
         MODEL_FILE,
     )
-    meta_m = MAML(
-        m, INNER_LR_DECODER, INNER_LR_BERT, first_order=True, allow_unused=True
-    ).cuda()
+    meta_m = MAML(m, INNER_LR_DECODER, INNER_LR_BERT, first_order=True, allow_unused=True).cuda()
     optimizer = Adam(
         [
-            {
-                "params": meta_m.module.text_field_embedder.parameters(),
-                "lr": META_LR_BERT,
-            },
+            {"params": meta_m.module.text_field_embedder.parameters(), "lr": META_LR_BERT},
             {"params": meta_m.module.decoders.parameters(), "lr": META_LR_DECODER},
             {"params": meta_m.module.scalar_mix.parameters(), "lr": META_LR_DECODER},
         ],
@@ -170,7 +165,7 @@ def main():
 
     # NI END
 
-    def restart_iter(task_generator,args): 
+    def restart_iter(task_generator, args):
         """ Restart the iter(Dataloader) by creating again the dataset.
         This method is called when we looped through the whole data and want to start from the beginning.
         """       
@@ -180,28 +175,23 @@ def main():
         # Language in lower case, remove -train.collu, -dev.conllu, -test.conllu
         lan_lowercase_ = task_split[-1].split('-')[0]+'-ud'
         return get_language_dataset(lan, lan_lowercase_, seed=args.seed, support_set_size=args.support_set_size)
-    
-           
+
     for iteration in range(EPISODES):
         print(f"[INFO]: Starting episode {iteration}\n\n", flush=True)
         iteration_loss = 0.0
-        ### NI START
-        episode_grads = [] # store the gradients of an episode for all languages
-        ### NI END
+        episode_grads = []  # NI store the gradients of an episode for all languages
+
         """Inner adaptation loop"""
         for j, task_generator in enumerate(training_tasks):
 
-            ### NI start
-            language_grads = torch.Tensor()#.to(device=device)
-            ### NI end
-
+            language_grads = torch.Tensor()#.to(device=device) # NI
             learner = meta_m.clone()
 
             # Sample two batches
             try:
                 support_set = next(task_generator) 
-            except StopIteration: #Exception called if iter reached its end.
-                #We create a new iterator to use instead
+            except StopIteration: # Exception called if iter reached its end.
+                # We create a new iterator to use instead
                 training_tasks[j] = restart_iter(task_generator,args)                
                 task_generator =training_tasks[j] 
                 support_set = next(task_generator) #Sample from new iter
@@ -209,49 +199,42 @@ def main():
             support_set = move_to_device(support_set,torch.device('cuda'))
             if SKIP_UPDATE == 0.0 or torch.rand(1) > SKIP_UPDATE:
                 for mini_epoch in range(UPDATES):
-                    # print(support_set)
 
                     torch.cuda.empty_cache()
                     inner_loss = learner.forward(**support_set)["loss"]
-                    ### NI START
-                    
+
+                    # NI
                     # learner.adapt(inner_loss, first_order=True)
                     # The following two lines  implemnt learning.adapt. See our_maml.py for details
                     grads = autograd.grad(inner_loss, learner.parameters(), create_graph=False, retain_graph=False, allow_unused=True)
                     maml_update(learner, lr=args.inner_lr_decoder, lr_small=args.inner_lr_bert, grads=grads)        
 
-
-                    #print(gradients_for_ni.shape)
-                    ### NI end
-
                     del inner_loss
                     torch.cuda.empty_cache()
 
-                ### NI start
-                if (iteration+1)%args.save_every==0:
-                        new_grads = []# filters out None grads
+                if (iteration+1) % args.save_every == 0:  # NI
+                        new_grads = []  # filters out None grads
                         for i in grads:
-                            #print(type(i))
                             if type(i) == torch.Tensor:
-                                #print(i.shape)
-                                #new_grads.append(i.detach().reshape(-1))
+                                # print(i.shape)
+                                # new_grads.append(i.detach().reshape(-1))
                                 new_grads.append(i.reshape(-1))
                 
-                        #grads_to_save = grads[0].detach().reshape(-1) # grads[0] are mBERT parameters (?)
+                        # grads_to_save = grads[0].detach().reshape(-1) # grads[0] are mBERT parameters (?)
                         grads_to_save = torch.hstack(new_grads) # getting all the parameters
-                        #print(f"Shape of grads to save", grads_to_save.shape)
+                        # print(f"Shape of grads to save", grads_to_save.shape)
 
                         #language_grads = torch.cat([language_grads.cpu(), grads_to_save.cpu()], dim=-1) # Updates*grad_len in the last update
                         language_grads = torch.cat([language_grads.cpu(), grads_to_save.cpu()], dim=-1) # Updates*grad_len in the last update
 
-                    #print(gradients_for_ni.shape)
-                    ### NI end
+                        del grads_to_save
+                        del new_grads
+                        torch.cuda.empty_cache()
 
             del support_set
             torch.cuda.empty_cache()
 
-            ### NI start
-            if (iteration+1)%args.save_every==0:
+            if (iteration+1)%args.save_every == 0:  # NI
                 language_grads = language_grads.reshape(-1) # setup for taking the average
 
                 # if args.accumulation_mode=="mean":
@@ -259,10 +242,8 @@ def main():
                 # else: # args.accumulation_mode=="sum"
                 #     language_grads = torch.sum(language_grads, dim = 1) # number of gradients x 1
                 
-                #episode_grads.append(language_grads.detach().numpy())
+                # episode_grads.append(language_grads.detach().numpy())
                 episode_grads.append(language_grads)
-
-            ### NI end
 
             try:
                 query_set = next(task_generator)
@@ -308,8 +289,8 @@ def main():
             #    language_grads_detachted
             #    for grad in language_grads:
 
-           # epi_grads = torch.Tensor(episode_grads)#.detach()
-            epi_grads = []
+            # epi_grads = torch.Tensor(episode_grads)#.detach()
+            # epi_grads = []
 
             # for epi_grad in episode_grads:
             #     lan_grads_detachted = []
@@ -317,15 +298,19 @@ def main():
             #     for lan_grad in epi_grad:
             #         #print(f"language gradient shape{lan_grad.shape}")
             #         lan_grads_detachted.append(lan_grad.detach())
-                # epi_grad.append(lan_grads_detachted)
+            # epi_grad.append(lan_grads_detachted)
 
             epi_grads = torch.stack((episode_grads))#.detach()
-            #print(f"Is detachted vector different than one that's not {torch.equal(epi_grads, grad_copy)}")
+            # print(f"Is detachted vector different than one that's not {torch.equal(epi_grads, grad_copy)}")
             print("[INFO]: Calculating cosine similarity matrix ...")
             cos_matrix = cosine_similarity(epi_grads)
-            #print("Cos sim matrix shape", cos_matrix.shape)
+            # print("Cos sim matrix shape", cos_matrix.shape)
             cos_matrices.append(np.array(cos_matrix)) 
             print("Cos matrices shape", np.array(cos_matrices).shape)
+
+            del episode_grads
+            del epi_grads
+            torch.cuda.empty_cache()
 
         # Bookkeeping
         with torch.no_grad():
@@ -336,19 +321,14 @@ def main():
         del iteration_loss
         torch.cuda.empty_cache()
 
-        if iteration + 1 in [1,500, 1500, 2000] and not (
-            iteration + 1 == 500 and DOING_MAML
-        ):
-            backup_path = os.path.join(
-                MODEL_VAL_DIR, "model" + str(iteration + 1) + ".th"
-            )
+        if iteration + 1 in [1, 500, 1500, 2000] and not (iteration + 1 == 500 and DOING_MAML):
+            backup_path = os.path.join(MODEL_VAL_DIR, "model" + str(iteration + 1) + ".th")
             torch.save(meta_m.module.state_dict(), backup_path)
         
-        ### NI START
+        # NI START
         # Save the gradients in case OOM occurs
         # Can't escape OOM
-
-        if (iteration+1)%args.save_every==0:# not to slow down a lot
+        if (iteration+1) % args.save_every == 0:  # not to slow down a lot
             
             save_this = np.array(cos_matrices)
 
@@ -360,10 +340,6 @@ def main():
                     save_this)
             torch.cuda.empty_cache()
 
-        ### NI END
-
-
-    ### NI START
     # save_this = torch.from_numpy(np.array(gradients_for_ni))
     # print(f"[INFO]: Saving the gradients with shape {save_this.shape}")
     # torch.save(save_this, f"saved_grads/gradients_for_ni_epi{EPISODES}_upd{UPDATES}_suppSize{args.support_set_size}")
@@ -375,7 +351,6 @@ def main():
     print(f"[INFO]: Saving the similarity matrix with shape {cos_matrices.shape}")
     np.save(f"cos_matrices/allGrads_episode_upd{UPDATES}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}_cos_mat{EPISODES}", cos_matrices)
 
-    ### NI END
     print("Done training ... archiving three models!")
     for i in [1,500, 600, 900, 1200, 1500, 1800, 2000, 1500]:
         filename = os.path.join(MODEL_VAL_DIR, "model" + str(i) + ".th")

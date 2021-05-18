@@ -89,6 +89,7 @@ def main():
     META_LR_DECODER = args.meta_lr_decoder
     META_LR_BERT = args.meta_lr_bert
     SKIP_UPDATE = args.skip_update
+    PRETRAIN_LAN = args.model_dir.split("/")[-2] # says what language we are using
 
     # Filenames
     MODEL_FILE = (args.model_dir if args.model_dir is not None else "logs/bert_finetune_en/2021.05.13_01.56.30")
@@ -101,6 +102,7 @@ def main():
             META_LR_DECODER,
             META_LR_BERT,
             UPDATES,
+            PRETRAIN_LAN,
             args.seed,
             args.language_order,
             args.accumulation_mode
@@ -298,19 +300,19 @@ def main():
         if (iteration+1) % args.save_every == 0:  # not to slow down a lot
 
             # Delete the last temp file
-            for filename in glob.glob(f"./cos_matrices/temp_allGrads_episode_upd{UPDATES}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}*"): # remove the previoustemp grads
+            for filename in glob.glob(f"./cos_matrices/temp_allGrads_episode_upd{UPDATES}_pretrain{PRETRAIN_LAN}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}*"): # remove the previoustemp grads
                 os.remove(filename) 
 
-            np.save(f"cos_matrices/temp_allGrads_episode_upd{UPDATES}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}_cos_mat{iteration}", np.array(cos_matrices))
+            np.save(f"cos_matrices/temp_allGrads_episode_upd{UPDATES}_pretrain{PRETRAIN_LAN}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}_cos_mat{iteration}", np.array(cos_matrices))
             torch.cuda.empty_cache()
 
     # Delete the last temp file
-    for filename in glob.glob(f"./cos_matrices/temp_allGrads_episode_upd{UPDATES}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}*"): # remove the previoustemp grads
+    for filename in glob.glob(f"./cos_matrices/temp_allGrads_episode_upd{UPDATES}_pretrain{PRETRAIN_LAN}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}*"): # remove the previoustemp grads
         os.remove(filename) 
 
     cos_matrices = np.array(cos_matrices)
     print(f"[INFO]: Saving the similarity matrix with shape {cos_matrices.shape}")
-    np.save(f"cos_matrices/allGrads_episode_upd{UPDATES}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}_cos_mat{EPISODES}", cos_matrices)
+    np.save(f"cos_matrices/allGrads_episode_upd{UPDATES}_pretrain{PRETRAIN_LAN}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}_cos_mat{EPISODES}", cos_matrices)
 
     print("Done training ... archiving three models!")
     try:

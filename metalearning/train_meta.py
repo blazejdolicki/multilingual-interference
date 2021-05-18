@@ -311,10 +311,10 @@ def main():
             epi_grads = torch.stack((episode_grads))#.detach()
             # print(f"Is detachted vector different than one that's not {torch.equal(epi_grads, grad_copy)}")
             print("[INFO]: Calculating cosine similarity matrix ...")
-            cos_matrix = cosine_similarity(epi_grads)
+            cos_matrix = cosine_similarity(epi_grads.detach().cpu().numpy())  # SHANE helpt
             # print("Cos sim matrix shape", cos_matrix.shape)
             # cos_matrices.append(np.array(cos_matrix))
-            cos_matrices.append(cos_matrix.detach().cpu().numpy())  # SHANE helpt
+            cos_matrices.append(cos_matrix)
 
             print("Cos matrices shape", np.array(cos_matrices).shape)
 

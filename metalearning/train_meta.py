@@ -202,12 +202,16 @@ def main():
                     except RuntimeError:
                         print(f'[ERROR]: Encountered a runtime error at iteration {iteration} for training task {j}. Sampeling new support set.')
                         try:
+                            torch.cuda.empty_cache()
                             support_set = next(task_generator)
+                            inner_loss = learner.forward(**support_set)["loss"]
                         except StopIteration:  # Exception called if iter reached its end.
                             # We create a new iterator to use instead
+                            torch.cuda.empty_cache()
                             training_tasks[j] = restart_iter(task_generator, args)
                             task_generator = training_tasks[j]
                             support_set = next(task_generator)  # Sample from new iter
+                            inner_loss = learner.forward(**support_set)["loss"]
 
                     # NI - The following two lines implement learning.adapt. See our_maml.py for details
                     # learner.adapt(inner_loss, first_order=True)

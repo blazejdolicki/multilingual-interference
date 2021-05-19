@@ -204,6 +204,7 @@ def main():
                         try:
                             torch.cuda.empty_cache()
                             support_set = next(task_generator)
+                            support_set = move_to_device(support_set, device)
                             inner_loss = learner.forward(**support_set)["loss"]
                         except StopIteration:  # Exception called if iter reached its end.
                             # We create a new iterator to use instead
@@ -211,6 +212,7 @@ def main():
                             training_tasks[j] = restart_iter(task_generator, args)
                             task_generator = training_tasks[j]
                             support_set = next(task_generator)  # Sample from new iter
+                            support_set = move_to_device(support_set, device)
                             inner_loss = learner.forward(**support_set)["loss"]
 
                     # NI - The following two lines implement learning.adapt. See our_maml.py for details

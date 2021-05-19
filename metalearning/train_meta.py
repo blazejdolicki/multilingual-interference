@@ -230,7 +230,7 @@ def main():
                                     new_grads.append(i.detach().cpu().reshape(-1))
 
                             grads_to_save = torch.hstack(new_grads).detach().cpu()  # getting all the parameters
-                            language_grads = torch.cat([language_grads, grads_to_save], dim=-1)  # Updates * grad_len in the last update
+                            language_grads = torch.cat([language_grads.cpu(), grads_to_save], dim=-1)  # Updates * grad_len in the last update
 
                             del grads_to_save
                             del new_grads

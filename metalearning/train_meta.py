@@ -89,6 +89,7 @@ def main():
     META_LR_DECODER = args.meta_lr_decoder
     META_LR_BERT = args.meta_lr_bert
     SKIP_UPDATE = args.skip_update
+    PRETRAIN_LAN = args.model_dir.split("/")[-2] # says what language we are using
 
     # Filenames
     MODEL_FILE = (args.model_dir if args.model_dir is not None else "logs/bert_finetune_en/2021.05.13_01.56.30")
@@ -101,6 +102,7 @@ def main():
             META_LR_DECODER,
             META_LR_BERT,
             UPDATES,
+            PRETRAIN_LAN,
             args.seed,
             args.language_order,
             args.accumulation_mode
@@ -177,56 +179,47 @@ def main():
             language_grads = torch.Tensor()
             learner = meta_m.clone()
 
-            # Sample a batch
-            try:
-                support_set = next(task_generator) 
-            except StopIteration:  # Exception called if iter reached its end.
-                # We create a new iterator to use instead
-                training_tasks[j] = restart_iter(task_generator, args)
-                task_generator = training_tasks[j]
-                support_set = next(task_generator)  # Sample from new iter
+            try:  # Sample a batch
 
-            support_set = move_to_device(support_set, device)
+                try:
+                    support_set = next(task_generator)
 
-            if SKIP_UPDATE == 0.0 or torch.rand(1) > SKIP_UPDATE:
+                except StopIteration:
+                    training_tasks[j] = restart_iter(task_generator, args)
+                    task_generator = training_tasks[j]
+                    support_set = next(task_generator)  # Sample from new iter
 
-                for mini_epoch in range(UPDATES):
+                support_set = move_to_device(support_set, device)
+                if SKIP_UPDATE == 0.0 or torch.rand(1) > SKIP_UPDATE:
 
-                    torch.cuda.empty_cache()
+                    for mini_epoch in range(UPDATES):
 
-                    # build in a check if the CUDA runs out, and if so changes the support set
-                    try:
+                        torch.cuda.empty_cache()
+
+                        # build in a check if the CUDA runs out, and if so changes the support set
                         inner_loss = learner.forward(**support_set)["loss"]
-                    except RuntimeError:
-                        print(f'[ERROR]: Encountered a runtime error at iteration {iteration} for training task {j}. Sampeling new support set.')
-                        try:
-                            support_set = next(task_generator)
-                        except StopIteration:  # Exception called if iter reached its end.
-                            # We create a new iterator to use instead
-                            training_tasks[j] = restart_iter(task_generator, args)
-                            task_generator = training_tasks[j]
-                            support_set = next(task_generator)  # Sample from new iter
 
-                    # NI - The following two lines implement learning.adapt. See our_maml.py for details
-                    # learner.adapt(inner_loss, first_order=True)
-                    grads = autograd.grad(inner_loss, learner.parameters(), create_graph=False, retain_graph=False, allow_unused=True)
-                    maml_update(learner, lr=args.inner_lr_decoder, lr_small=args.inner_lr_bert, grads=grads)        
+                        # NI - The following two lines implement learning.adapt. See our_maml.py for details
+                        # learner.adapt(inner_loss, first_order=True)
+                        grads = autograd.grad(inner_loss, learner.parameters(), create_graph=False, retain_graph=False, allow_unused=True)
+                        maml_update(learner, lr=args.inner_lr_decoder, lr_small=args.inner_lr_bert, grads=grads)
 
-                    del inner_loss
-                    torch.cuda.empty_cache()
+                        del inner_loss
+                        torch.cuda.empty_cache()
 
-                    if (iteration+1) % args.save_every == 0:  # NI
-                            new_grads = []  # filters out None grads
-                            for i in grads:
-                                if type(i) == torch.Tensor:
-                                    new_grads.append(i.detach().cpu().reshape(-1))
-
+                        if (iteration+1) % args.save_every == 0:  # NI
+                            new_grads = [g.detach().cpu().reshape(-1) for g in grads if type(g) == torch.Tensor]  # filters out None grads
                             grads_to_save = torch.hstack(new_grads).detach().cpu()  # getting all the parameters
-                            language_grads = torch.cat([language_grads, grads_to_save], dim=-1)  # Updates * grad_len in the last update
+                            language_grads = torch.cat([language_grads.cpu(), grads_to_save], dim=-1)  # Updates * grad_len in the last update
 
                             del grads_to_save
                             del new_grads
                             torch.cuda.empty_cache()
+
+            except RuntimeError:
+                print(f'[ERROR]: Encountered a runtime error at iteration {iteration} for training task {j}.',
+                      f' Skipping this training task.')
+                break
 
             del support_set
             torch.cuda.empty_cache()
@@ -298,22 +291,27 @@ def main():
         if (iteration+1) % args.save_every == 0:  # not to slow down a lot
 
             # Delete the last temp file
-            for filename in glob.glob(f"./cos_matrices/temp_allGrads_episode_upd{UPDATES}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}*"): # remove the previoustemp grads
+            for filename in glob.glob(f"./cos_matrices/temp_allGrads_episode_upd{UPDATES}_pretrain{PRETRAIN_LAN}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}*"): # remove the previoustemp grads
                 os.remove(filename) 
 
-            np.save(f"cos_matrices/temp_allGrads_episode_upd{UPDATES}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}_cos_mat{iteration}", np.array(cos_matrices))
+            np.save(f"cos_matrices/temp_allGrads_episode_upd{UPDATES}_pretrain{PRETRAIN_LAN}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}_cos_mat{iteration}", np.array(cos_matrices))
             torch.cuda.empty_cache()
 
     # Delete the last temp file
-    for filename in glob.glob(f"./cos_matrices/temp_allGrads_episode_upd{UPDATES}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}*"): # remove the previoustemp grads
+    for filename in glob.glob(f"./cos_matrices/temp_allGrads_episode_upd{UPDATES}_pretrain{PRETRAIN_LAN}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}*"): # remove the previoustemp grads
         os.remove(filename) 
 
     cos_matrices = np.array(cos_matrices)
     print(f"[INFO]: Saving the similarity matrix with shape {cos_matrices.shape}")
-    np.save(f"cos_matrices/allGrads_episode_upd{UPDATES}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}_cos_mat{EPISODES}", cos_matrices)
+    np.save(f"cos_matrices/allGrads_episode_upd{UPDATES}_pretrain{PRETRAIN_LAN}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}_cos_mat{EPISODES}", cos_matrices)
 
     print("Done training ... archiving three models!")
-    for i in [last_iter]:
+    try:
+        print(last_iter) # last iter has not been defined
+    except:
+        last_iter = []
+
+    for i in [EPISODES]:
 
         filename = os.path.join(MODEL_VAL_DIR, "model" + str(i) + ".th")
 

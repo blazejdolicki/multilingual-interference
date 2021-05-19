@@ -107,8 +107,8 @@ def main():
     WHERE_TO_SAVE = "_".join(paramlist)
     USE_ADAM = args.optimizer == "adam"
 
-    print("Saving all to directory", WHERE_TO_SAVE)
-    print("Running from", MODEL_DIR, "with learning rates", LR_DECODER, LR_BERT)
+    print("Saving all to directory", WHERE_TO_SAVE, flush=True)
+    print("Running from", MODEL_DIR, "with learning rates", LR_DECODER, LR_BERT, flush=True)
     subprocess.run(["mkdir", WHERE_TO_SAVE])
 
     # The languages on which to evaluate
@@ -170,8 +170,10 @@ def main():
                 )
 
             for BATCH in range(BATCHES):
+
+
                 try:
-                    support_set = next(iter(val_iterator))                    
+                    support_set = next(val_iterator)                   
                     support_set = move_to_device(support_set,torch.device('cuda'))
                 except StopIteration:
                     test_file = get_test_set(
@@ -192,7 +194,7 @@ def main():
                         validate=True,
                         bs=args.support_set_size * args.batches,
                     )
-                    support_set = next(iter(val_iterator))
+                    support_set = next(val_iterator)
                     support_set = move_to_device(support_set,torch.device('cuda'))
 
                 NO += 1
@@ -225,7 +227,7 @@ def main():
             )
 
             # Clean up
-            print("Wrote", current_output_file, "removing", SERIALIZATION_DIR)
+            print("Wrote", current_output_file, "removing", SERIALIZATION_DIR, flush=True)
             subprocess.run(["rm", "-r", "-f", SERIALIZATION_DIR])
 
             del m

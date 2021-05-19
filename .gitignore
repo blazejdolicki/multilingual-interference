@@ -118,3 +118,6 @@ metalearning/metavalidation_0.0001_1e-05_20_20_sgd_saved_models-XMAML_0.001_0.00
 metalearning/metatesting_0.0001_1e-05_20_20_sgd_saved_models-XMAML_0.001_0.001_0.001_0.001_5_9999_1/
 metalearning/.vscode/
 metalearning/udify.zip
+metalearning/metatesting_0.001_0.0001_20_20_sgd_logs-bert_finetune_en-2021.05.18_15.18.52_None/
+metalearning/metavalidation_0.001_0.0001_20_20_sgd_logs-bert_finetune_en-2021.05.18_15.18.52_None/
+metalearning/metatesting_None_None_3_32_adam_saved_models-XMAML_0.001_0.001_0.001_0.001_5_9999_None/

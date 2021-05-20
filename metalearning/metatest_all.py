@@ -20,6 +20,7 @@ from naming_conventions import (
     validation_languages,
     validation_languages_lowercase,
 )
+import sys
 from naming_conventions import (
     languages_too_small_for_20_batch_20,
     languages_too_small_for_20_batch_20_lowercase,
@@ -28,7 +29,7 @@ from get_language_dataset import get_language_dataset, get_test_set
 import argparse
 # metatest_all.py --validate True --lr_decoder 0.0001 --lr_bert 1e-05 --updates 20 --support_set_size 20 --optimizer sgd --seed 3 --episode 500
 from allennlp.nn.util import move_to_device
-
+sys.stdout.reconfigure(encoding="utf-8")
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--seed", default=9999, type=int, help="Set seed")

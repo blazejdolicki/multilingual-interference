@@ -131,7 +131,7 @@ def main():
             input_set = move_to_device(input_set, device)
             loss = model(**input_set)["loss"]
             # task_num_tokens_seen[j] += len(input_set['tokens']['tokens'][0])
-            grads = autograd.grad(loss, model.parameters(), create_graph=False, retain_graph=False, allow_unused=True)
+            grads = autograd.grad(loss, model.parameters(), create_graph=False, retain_graph=True, allow_unused=True)
             if (episode+1) % args.save_every == 0:  # NI
                         new_grads = [g.detach().cpu().reshape(-1) for g in grads if type(g) == torch.Tensor]  # filters out None grads
                         grads_to_save = torch.hstack(new_grads).detach().cpu()  # getting all the parameters

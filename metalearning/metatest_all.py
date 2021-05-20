@@ -68,23 +68,25 @@ def main():
     BATCHES = args.batches  # * args.support_set_size
 
     # Extract
-    subprocess.run(
-        [
-            "tar",
-            "-x",
-            "-z",
-            "-v",
-            "-f",
-            os.path.join(MODEL_DIR, "model.tar.gz"),
-            "-C",
-            MODEL_DIR,
-        ]
-    )
-    subprocess.run(
-        ["mv", os.path.join(MODEL_DIR, "weights.th"),
-         os.path.join(MODEL_DIR, "best.th")]
-    )
-
+    try:
+        subprocess.run(
+            [
+                "tar",
+                "-x",
+                "-z",
+                "-v",
+                "-f",
+                os.path.join(MODEL_DIR, "model.tar.gz"),
+                "-C",
+                MODEL_DIR,
+            ]
+        )
+        subprocess.run(
+            ["mv", os.path.join(MODEL_DIR, "weights.th"),
+            os.path.join(MODEL_DIR, "best.th")]
+        )
+    except:
+        print('no model.tar.gz')
     # Is it validation time, or test time?
     if args.validate:
         the_languages = validation_languages

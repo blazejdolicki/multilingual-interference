@@ -48,14 +48,14 @@ for file in test_files:
         test = annotations[args.batch_size :]
 
         # new Dev
-        with open(output_filename + "-dev" + str(i) + ".conllu", "w") as f:
+        with open(output_filename + "-dev" + str(i) + ".conllu", "w",encoding="utf-8") as f:
             for z in development:
                 for line in z:
                     f.write(line)
                     f.write("\n")
                 f.write("\n")
         # new Test
-        with open(output_filename + "-test" + str(i) + ".conllu", "w") as f:
+        with open(output_filename + "-test" + str(i) + ".conllu", "w",encoding="utf-8") as f:
             for z in test:
                 for line in z:
                     f.write(line)

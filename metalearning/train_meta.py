@@ -230,40 +230,40 @@ def main():
                             del new_grads
                             torch.cuda.empty_cache()
 
+                del support_set
+                torch.cuda.empty_cache()
+
+                if (iteration+1) % args.save_every == 0:  # NI
+                    language_grads = language_grads.reshape(-1, UPDATES)  # setup for taking the average
+
+                    if args.accumulation_mode == "mean":
+                        language_grads = torch.mean(language_grads, dim=1)  # number of gradients x 1
+                    else:
+                        language_grads = torch.sum(language_grads, dim=1)  # number of gradients x 1
+
+                    episode_grads.append(language_grads.detach().cpu().numpy())
+
+                try:
+                    query_set = next(task_generator)
+                except StopIteration:  # Exception called if iter reached its end.
+                    # We create a new iterator to use instead
+                    training_tasks[j] = restart_iter(task_generator,args)
+                    task_generator = training_tasks[j]
+                    query_set = next(task_generator)
+
+                query_set = move_to_device(query_set, device)
+                eval_loss = learner.forward(**query_set)["loss"]
+                iteration_loss += eval_loss
+
+                del eval_loss
+                del learner
+                del query_set
+                torch.cuda.empty_cache()
+
             except RuntimeError:
                 print(f'[ERROR]: Encountered a runtime error at iteration {iteration} for training task {j}.',
                       f' Skipping this training task.')
-                break
-
-            del support_set
-            torch.cuda.empty_cache()
-
-            if (iteration+1) % args.save_every == 0:  # NI
-                language_grads = language_grads.reshape(-1, UPDATES)  # setup for taking the average
-
-                if args.accumulation_mode == "mean":
-                    language_grads = torch.mean(language_grads, dim=1)  # number of gradients x 1
-                else:
-                    language_grads = torch.sum(language_grads, dim=1)  # number of gradients x 1
-                
-                episode_grads.append(language_grads.detach().cpu().numpy())
-
-            try:
-                query_set = next(task_generator)
-            except StopIteration:  # Exception called if iter reached its end.
-                # We create a new iterator to use instead
-                training_tasks[j] = restart_iter(task_generator,args)
-                task_generator = training_tasks[j]
-                query_set = next(task_generator)
-
-            query_set = move_to_device(query_set, device)
-            eval_loss = learner.forward(**query_set)["loss"]
-            iteration_loss += eval_loss
-
-            del eval_loss
-            del learner
-            del query_set
-            torch.cuda.empty_cache()
+                continue
 
         if (iteration + 1) % args.save_every == 0:
             epi_grads = np.array(episode_grads)
@@ -304,15 +304,16 @@ def main():
         # NI - Save the gradients in case OOM occurs
         if (iteration+1) % args.save_every == 0:  # not to slow down a lot
 
+            file_path_ = f"cos_matrices/temp_allGrads_episode_upd{UPDATES}_pretrain{PRETRAIN_LAN}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}"
             # Delete the last temp file
-            for filename in glob.glob(f"./cos_matrices/temp_allGrads_episode_upd{UPDATES}_pretrain{PRETRAIN_LAN}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}*"): # remove the previoustemp grads
+            for filename in glob.glob(f"{file_path_}*"): # remove the previoustemp grads
                 os.remove(filename) 
 
-            np.save(f"cos_matrices/temp_allGrads_episode_upd{UPDATES}_pretrain{PRETRAIN_LAN}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}_cos_mat{iteration}", np.array(cos_matrices))
+            np.save(f"{file_path_}_cos_mat{iteration}", np.array(cos_matrices))
             torch.cuda.empty_cache()
 
     # Delete the last temp file
-    for filename in glob.glob(f"./cos_matrices/temp_allGrads_episode_upd{UPDATES}_pretrain{PRETRAIN_LAN}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}*"): # remove the previoustemp grads
+    for filename in glob.glob(f"{file_path_}*"):  # remove the previoustemp grads
         os.remove(filename) 
 
     cos_matrices = np.array(cos_matrices)
@@ -320,11 +321,6 @@ def main():
     np.save(f"cos_matrices/allGrads_episode_upd{UPDATES}_pretrain{PRETRAIN_LAN}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}_cos_mat{EPISODES}", cos_matrices)
 
     print("Done training ... archiving three models!")
-    try:
-        print(last_iter) # last iter has not been defined
-    except:
-        last_iter = []
-
     for i in [EPISODES]:
 
         filename = os.path.join(MODEL_VAL_DIR, "model" + str(i) + ".th")

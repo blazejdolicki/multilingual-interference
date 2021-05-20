@@ -1,11 +1,11 @@
 #!/bin/bash
 
-#SBATCH --partition=gpu_shared_course
+#SBATCH --partition=gpu_titanrtx_shared_course
 #SBATCH --gres=gpu:1
 #SBATCH --job-name=ConcatTreebanks
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
-#SBATCH --time=10:00:00
+#SBATCH --time=5:00:00
 #SBATCH --mem=32000M
 #SBATCH --output=slurm_output_%A.out
 

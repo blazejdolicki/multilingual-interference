@@ -249,7 +249,7 @@ def main():
             except RuntimeError:
                 print(f'[ERROR]: Encountered a runtime error at iteration {iteration} for training task {j}.',
                       f' Skipping this training task.')
-                break
+                continue
 
         if (iteration + 1) % args.save_every == 0:
             epi_grads = np.array(episode_grads)

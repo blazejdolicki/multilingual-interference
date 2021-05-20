@@ -2,10 +2,10 @@
 
 #SBATCH --partition=gpu_titanrtx_shared_course
 #SBATCH --gres=gpu:1
-#SBATCH --job-name=meta_experiment
+#SBATCH --job-name=meta_nonepisodic
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
-#SBATCH --time=47:59:00
+#SBATCH --time=22:59:00
 #SBATCH --mem=32000M
 #SBATCH --output=slurm_output_%A.out
 
@@ -26,4 +26,4 @@ source activate atcs-project
 
 # finetune mBERT model with English data using the vocabulary specified in config (that was created from all exp-mix languages)
 #python train_meta.py --model_dir logs/bert_finetune_en/2021.05.15_11.24.02
-python train_meta.py --inner_lr_decoder 5e-04 --inner_lr_bert 5e-05 --meta_lr_decoder 5e-04 --meta_lr_bert 5e-05 --updates 20 --episodes 500 --support_set_size 20 --model_dir logs/bert_finetune_hindi/2021.05.18_14.46.31/ --addenglish --notaddhindi
+python train_nonepisodic.py --lr_decoder 1e-04 --lr_bert 7e-06 --episodes 500 --support_set_size 20 --addenglish --notaddhindi --model_dir logs/bert_finetune_hindi/2021.05.18_14.46.31

@@ -245,3 +245,34 @@ train_languages_order_2_lowercase = [
     "cs_pdt-ud",
     "ru_syntagrus-ud"
 ]
+
+
+# Pairwise training experiments
+
+train_languages_pairwise_1 = [
+     'UD_Hindi-HDTB',
+     'UD_Korean-Kaist'
+]
+
+train_languages_pairwise_lowercase_1 = [
+    "hi_hdtb-ud",
+    "ko_kaist-ud",
+]
+
+train_languages_pairwise_2 = [
+     'UD_Arabic-PADT',
+     'UD_Korean-Kaist'
+]
+
+train_languages_pairwise_lowercase_2 = [
+    "ar_padt-ud",
+    "ko_kaist-ud",
+]
+
+validate_language_for_pairwise = [
+    'UD_Korean-Kaist'
+]
+
+validate_language_for_pairwise_lowercase = [
+    "ko_kaist-ud"
+]

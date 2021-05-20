@@ -19,6 +19,8 @@ from naming_conventions import (
     languages_lowercase,
     validation_languages,
     validation_languages_lowercase,
+    validate_language_for_pairwise,
+    validate_language_for_pairwise_lowercase
 )
 from naming_conventions import (
     languages_too_small_for_20_batch_20,
@@ -45,8 +47,10 @@ def main():
     parser.add_argument("--validate",default=False,type=bool,help="Meta-validate on validation language, for hyperparameter search",)
     parser.add_argument("--amount",default=20,type=int,help="Amount of experiments to do /meta-test batches to sample",)
     parser.add_argument("--batches", default=1, type=int,help="How many batches to sample per update")
+    parser.add_argument("--validate_pairwise", default=False, type=bool, help="Flag to validate on the language after we trained in pairs")
 
     args = parser.parse_args()
+    print(args)
 
     # The model on which to Meta_test
     MODEL_DIR_PRETRAIN = "logs/english_expmix_deps/2020.05.17_01.08.52/"
@@ -94,6 +98,15 @@ def main():
         the_languages = languages
         the_languages_lowercase = languages_lowercase
         extra_string = "metatesting"
+
+
+    # validate after the pairwise training:
+    if args.validate_pairwise:
+        print('evaluating on Korean!')
+        the_languages = validate_language_for_pairwise
+        the_languages_lowercase = validate_language_for_pairwise_lowercase
+        extra_string = "metavalidation_pairwise"
+
 
     paramlist = [
         extra_string,

@@ -50,8 +50,9 @@ def main():
     parser.add_argument("--language_order", default=0, type=int, help="The order of languages in the inner loop")
     parser.add_argument("--save_every", default=4, type=int, help="Save the gradient conflicts every save_every episodes ")
     parser.add_argument("--accumulation_mode", default="sum", type=str, help="What gradient accumulation strategy to use", choices=["mean", "sum"])
+    parser.add_argument("--pairwise", default=0, type=int, help="Train pairs of language. Cosine similarity values: 1 - high, 2 - low, 0 - not pairwise")
     args = parser.parse_args()
-
+    print(args)
     Path("saved_models").mkdir(parents=True, exist_ok=True)
 
     print(f"Using accumulation mode {args.accumulation_mode} for gradient accumulation")
@@ -72,6 +73,19 @@ def main():
     else:
         lan_ = naming_conventions.train_languages
         lan_lowercase_ = naming_conventions.train_languages_lowercase
+
+    #Only for the case if we train  in pairs
+
+    #language pairs with high cosine similarity
+    if args.pairwise == 1:
+        print('korean-hindi pair')
+        lan_ = naming_conventions.train_languages_pairwise_1
+        lan_lowercase_ = naming_conventions.train_languages_pairwise_lowercase_1
+    #language pairs with low cosine similarity
+    elif  args.pairwise == 2:
+        print('korean-arabic pair')
+        lan_ = naming_conventions.train_languages_pairwise_2
+        lan_lowercase_ = naming_conventions.train_languages_pairwise_lowercase_2
 
     for lan, lan_l in zip(lan_, lan_lowercase_):
         if not ("indi" in lan and args.notaddhindi):

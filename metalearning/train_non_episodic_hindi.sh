@@ -26,4 +26,4 @@ source activate atcs-project
 
 # finetune mBERT model with English data using the vocabulary specified in config (that was created from all exp-mix languages)
 #python train_meta.py --model_dir logs/bert_finetune_en/2021.05.15_11.24.02
-python train_nonepisodic.py --lr_decoder 1e-04 --lr_bert 7e-06 --episodes 500 --support_set_size 20 --addenglish --notaddhindi --model_dir logs/bert_finetune_hindi/2021.05.18_14.46.31
+python train_nonepisodic.py --lr_decoder 1e-04 --lr_bert 7e-06 --episodes 500 --support_set_size 20 --addenglish True --notaddhindi True --model_dir logs/bert_finetune_hindi/2021.05.18_14.46.31

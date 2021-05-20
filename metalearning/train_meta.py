@@ -54,6 +54,7 @@ def main():
 
     Path("saved_models").mkdir(parents=True, exist_ok=True)
 
+    Path("cos_matrices").mkdir(parents=True, exist_ok=True)
     print(f"Using accumulation mode {args.accumulation_mode} for gradient accumulation")
     device = torch.device('cuda')
 

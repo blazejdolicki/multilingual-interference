@@ -22,6 +22,7 @@ from allennlp.nn.util import move_to_device
 from sklearn.metrics.pairwise import cosine_similarity
 
 import glob
+from pathlib import Path
 
 def main():
     parser = argparse.ArgumentParser()
@@ -40,7 +41,9 @@ def main():
     parser.add_argument("--accumulation_mode", default="sum", type=str, help="What gradient accumulation strategy to use", choices=["mean", "sum"])
 
     args = parser.parse_args()
+    Path("saved_models").mkdir(parents=True, exist_ok=True)
 
+    Path("cos_matrices").mkdir(parents=True, exist_ok=True)
     training_tasks = []
     device = torch.device('cuda')
     # 7 languages by default -R
@@ -79,6 +82,8 @@ def main():
         + str(LR_BERT)
         + "_"
         + str(args.seed)
+        + "_"
+        + str(PRETRAIN_LAN)
     )
     MODEL_VAL_DIR = MODEL_SAVE_NAME + args.name
     MODEL_FILE = (args.model_dir if args.model_dir is not None else "logs/bert_finetune_en/2021.05.13_01.56.30")

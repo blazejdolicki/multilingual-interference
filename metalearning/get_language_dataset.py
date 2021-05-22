@@ -115,18 +115,18 @@ def get_language_dataset(
             "data/ud-treebanks-v2.3", language, language2 + "-dev.conllu"
         )
 
-    iterator_params = {
-        "batch_size": support_set_size,
-        "maximum_samples_per_batch": [
-            "num_tokens",
-            support_set_size * 80,
-        ],  # Unfortunately necessary
-    }
+    # iterator_params = {
+    #     "batch_size": support_set_size,
+    #     "maximum_samples_per_batch": [
+    #         "num_tokens",
+    #         support_set_size * 80,
+    #     ],  # Unfortunately necessary
+    # }
 
-    if validate:
-        iterator_params = {
-            "batch_size": support_set_size,
-        }
+    # if validate:
+    #     iterator_params = {
+    #         "batch_size": support_set_size,
+    #     }
 
     configs.append(Params(overrides))
     configs.append(
@@ -146,7 +146,7 @@ def get_language_dataset(
                         "data/vocab/english_only_expmix4/vocabulary"
                     )
                 },
-                "iterator": iterator_params,
+                # "iterator": iterator_params,
                 "random_seed": seed,
                 "numpy_seed": seed,
                 "pytorch_seed": seed,
@@ -181,7 +181,7 @@ def get_language_dataset(
     # Construct a dataloader directly for a dataset which contains allennlp
     # Instances which have _already_ been indexed.
     # raw_train_generator = move_to_device(raw_train_generator,torch.device('cuda'))
-    my_loader = DataLoader(raw_train_generator, batch_size=support_set_size, collate_fn=allennlp_collate,pin_memory=True)
+    my_loader = DataLoader(raw_train_generator, batch_size=support_set_size, collate_fn=allennlp_collate,pin_memory=False)
     # groups = lazy_groups_of(my_loader
 # , 1)# -R hardcoded batch of size 1?
     

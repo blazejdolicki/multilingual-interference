@@ -121,3 +121,4 @@ metalearning/udify.zip
 metalearning/metatesting_0.001_0.0001_20_20_sgd_logs-bert_finetune_en-2021.05.18_15.18.52_None/
 metalearning/metavalidation_0.001_0.0001_20_20_sgd_logs-bert_finetune_en-2021.05.18_15.18.52_None/
 metalearning/metatesting_None_None_3_32_adam_saved_models-XMAML_0.001_0.001_0.001_0.001_5_9999_None/
+.DS_Store

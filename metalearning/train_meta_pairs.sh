@@ -9,7 +9,6 @@
 #SBATCH --mem=32000M
 #SBATCH --output=slurm_output_%A.out
 
-
 module purge
 module load 2019
 module load Python/3.7.5-foss-2019b

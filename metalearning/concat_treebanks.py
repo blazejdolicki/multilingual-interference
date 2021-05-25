@@ -27,9 +27,9 @@ treebanks = util.get_ud_treebank_files(args.dataset_dir, args.treebanks)
 train, dev, test = list(zip(*[treebanks[k] for k in treebanks]))
 
 for treebank, name in zip([train, dev, test], ["train.conllu", "dev.conllu", "test.conllu"]):
-    with open(os.path.join(args.output_dir, name), 'w') as write:
+    with open(os.path.join(args.output_dir, name), 'w', encoding='utf-8') as write:
         for t in treebank:
             if not t:
                 continue
-            with open(t, 'r') as read:
+            with open(t, 'r', encoding='utf-8') as read:
                 shutil.copyfileobj(read, write)

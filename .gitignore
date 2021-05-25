@@ -121,3 +121,8 @@ metalearning/udify.zip
 metalearning/metatesting_0.001_0.0001_20_20_sgd_logs-bert_finetune_en-2021.05.18_15.18.52_None/
 metalearning/metavalidation_0.001_0.0001_20_20_sgd_logs-bert_finetune_en-2021.05.18_15.18.52_None/
 metalearning/metatesting_None_None_3_32_adam_saved_models-XMAML_0.001_0.001_0.001_0.001_5_9999_None/
+.DS_Store
+metavalidation_pairwise_0.001_0.0001_20_20_sgd_saved_models-Korean_Hindi_XMAML_0.001_0.0001_0.0005_1e-05_20_bert_finetune_en_9999_0_sum_None
+metavalidation_pairwise_0.001_0.0001_20_20_sgd_saved_models-XMAML_0.001_0.0001_0.0005_1e-05_20_bert_finetune_en_9999_0_sumKorean_Arabic_None
+.*
+!/.gitignore

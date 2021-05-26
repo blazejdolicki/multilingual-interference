@@ -124,16 +124,17 @@ def main():
     episode_grads = []  # NI store the gradients of an episode for all languages
     cos_matrices = []
     for episode in range(EPISODES):
-        print('episode:',episode)
+        print('--------------------------------------------------------')
+        print('\n episode:',episode, flush=True)
         t = torch.cuda.get_device_properties(0).total_memory
         r = torch.cuda.memory_reserved(0)
         a = torch.cuda.memory_allocated(0)
         f = r - a  # free inside reserved
 
-        print(f'\ntotal     : {t}')
-        print(f'reserved  : {r}')
-        print(f'allocated : {a}')
-        print(f'free      : {f}\n')
+        print(f'\ntotal     : {t}', flush=True)
+        print(f'reserved  : {r}', flush=True)
+        print(f'allocated : {a}', flush=True)
+        print(f'free      : {f}\n', flush=True)
         for j, task in enumerate(training_tasks):
             language_grads = torch.Tensor()            
             try:

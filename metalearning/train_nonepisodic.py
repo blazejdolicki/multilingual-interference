@@ -125,6 +125,15 @@ def main():
     cos_matrices = []
     for episode in range(EPISODES):
         print('episode:',episode)
+        t = torch.cuda.get_device_properties(0).total_memory
+        r = torch.cuda.memory_reserved(0)
+        a = torch.cuda.memory_allocated(0)
+        f = r - a  # free inside reserved
+
+        print(f'\ntotal     : {t}')
+        print(f'reserved  : {r}')
+        print(f'allocated : {a}')
+        print(f'free      : {f}\n')
         for j, task in enumerate(training_tasks):
             language_grads = torch.Tensor()            
             try:

@@ -124,6 +124,7 @@ def main():
     episode_grads = []  # NI store the gradients of an episode for all languages
     cos_matrices = []
     for episode in range(EPISODES):
+        print('episode:',episode)
         for j, task in enumerate(training_tasks):
             language_grads = torch.Tensor()            
             try:

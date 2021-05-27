@@ -121,16 +121,17 @@ def main():
     with open(MODEL_VAL_DIR + "/losses.txt", "w") as f:
         f.write("model ready\n")
     losses = []
-    episode_grads = []  # NI store the gradients of an episode for all languages
     cos_matrices = []
     for episode in range(EPISODES):
+        
+        episode_grads = []  # NI store the gradients of an episode for all languages
         print('--------------------------------------------------------')
         print('\n episode:',episode, flush=True)
         t = torch.cuda.get_device_properties(0).total_memory
         r = torch.cuda.memory_reserved(0)
         a = torch.cuda.memory_allocated(0)
         f = r - a  # free inside reserved
-
+        iteration_loss = 0.0
         print(f'\ntotal     : {t}', flush=True)
         print(f'reserved  : {r}', flush=True)
         print(f'allocated : {a}', flush=True)

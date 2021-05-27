@@ -125,9 +125,11 @@ metalearning/metatesting_None_None_3_32_adam_saved_models-XMAML_0.001_0.001_0.00
 
 metalearning/metavalidation_pairwise_0.001_0.0001_20_20_sgd_saved_models-Korean_Hindi_XMAML_0.001_0.0001_0.0005_1e-05_20_bert_finetune_en_9999_0_sum_None_old
 metalearning/metavalidation_pairwise_0.001_0.0001_20_20_sgd_saved_models-XMAML_0.001_0.0001_0.0005_1e-05_20_bert_finetune_en_9999_0_sumKorean_Arabic_None_old
-.*
-!/.gitignore
+
+metalearning/.*
 metalearning/.DS_Store
 metalearning/cos_matrices
 metalearning/metavalidation_pairwise_0.001_0.0001_20_20_sgd_saved_models-XMAML_0.001_0.0001_0.0005_1e-05_20_bert_finetune_en_9999_0_sumKorean_Hindi_None
 metalearning/metavalidation_pairwise_0.001_0.0001_20_20_sgd_saved_models-XMAML_0.001_0.0001_0.0005_1e-05_20_bert_finetune_en_9999_0_sumKorean_Arabic_None
+.*
+!/.gitignore

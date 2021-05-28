@@ -20,7 +20,10 @@ from naming_conventions import (
     validation_languages,
     validation_languages_lowercase,
     validate_language_for_pairwise,
-    validate_language_for_pairwise_lowercase
+    validate_language_for_pairwise_lowercase,
+    validate_language_for_pairwise_2,
+    validate_language_for_pairwise_lowercase_2
+
 )
 from naming_conventions import (
     languages_too_small_for_20_batch_20,
@@ -47,7 +50,7 @@ def main():
     parser.add_argument("--validate",default=False,type=bool,help="Meta-validate on validation language, for hyperparameter search",)
     parser.add_argument("--amount",default=20,type=int,help="Amount of experiments to do /meta-test batches to sample",)
     parser.add_argument("--batches", default=1, type=int,help="How many batches to sample per update")
-    parser.add_argument("--validate_pairwise", default=False, type=bool, help="Flag to validate on the language after we trained in pairs")
+    parser.add_argument("--validate_pairwise", default=0, type=int, help="Number to validate on the language after we trained in pairs")
 
     args = parser.parse_args()
     print(args)
@@ -101,11 +104,17 @@ def main():
 
 
     # validate after the pairwise training:
-    if args.validate_pairwise:
+    if args.validate_pairwise == 1:
         print('evaluating on Korean!')
         the_languages = validate_language_for_pairwise
         the_languages_lowercase = validate_language_for_pairwise_lowercase
-        extra_string = "metavalidation_pairwise"
+        extra_string = "metavalidation_pairwise_Korean"
+    
+    if args.validate_pairwise == 2:
+        print('evaluating on Czech!')
+        the_languages = validate_language_for_pairwise_2
+        the_languages_lowercase = validate_language_for_pairwise_lowercase_2
+        extra_string = "metavalidation_pairwise_Czech"
 
 
     paramlist = [

@@ -118,6 +118,9 @@ metalearning/saved_models/
 metalearning/metavalidation_0.0001_1e-05_20_20_sgd_saved_models-XMAML_0.001_0.001_0.001_0.001_5_9999_1/
 metalearning/metatesting_0.0001_1e-05_20_20_sgd_saved_models-XMAML_0.001_0.001_0.001_0.001_5_9999_1/
 metalearning/.vscode/
+metavalidation_pairwise_0.001_0.0001_20_20_sgd_saved_models-XMAML_0.001_0.0001_0.0005_1e-05_20_bert_finetune_en_1_0_sumKorean_Hindi_None/
+metavalidation_pairwise_Czech_0.0005_5e-05_20_20_sgd_saved_models-XMAML_0.0005_5e-05_0.0005_5e-05_20_fine_tuned_hindi_9999_0_sumCzech_Arabic_None
+metavalidation_pairwise_Czech_0.0005_5e-05_20_20_sgd_saved_models-XMAML_0.0005_5e-05_0.0005_5e-05_20_fine_tuned_hindi_9999_0_sumCzech_English_None
 
 .*
 !.*/

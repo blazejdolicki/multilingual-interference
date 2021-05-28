@@ -78,17 +78,26 @@ def main():
 
     #language pairs with high cosine similarity
     if args.pairwise == 1:
-        print('korean-hindi pair')
+        print('\nkorean-hindi pair\n')
         lan_ = naming_conventions.train_languages_pairwise_1
         lan_lowercase_ = naming_conventions.train_languages_pairwise_lowercase_1
     #language pairs with low cosine similarity
     elif  args.pairwise == 2:
-        print('korean-arabic pair')
+        print('\nkorean-arabic pair\n')
         lan_ = naming_conventions.train_languages_pairwise_2
         lan_lowercase_ = naming_conventions.train_languages_pairwise_lowercase_2
+    elif  args.pairwise == 3:
+        print('\nczech-arabic pair\n')
+        lan_ = naming_conventions.train_languages_pairwise_3
+        lan_lowercase_ = naming_conventions.train_languages_pairwise_lowercase_3
+    elif  args.pairwise == 4:
+        print('\nczech-english pair\n')
+        lan_ = naming_conventions.train_languages_pairwise_4
+        lan_lowercase_ = naming_conventions.train_languages_pairwise_lowercase_4
 
+   
     for lan, lan_l in zip(lan_, lan_lowercase_):
-        if not ("indi" in lan and args.notaddhindi):
+        if not ("Hindi" in lan and args.notaddhindi):
             training_tasks.append(get_language_dataset(lan, lan_l, seed=args.seed, support_set_size=args.support_set_size))
             
     # Setting parameters
@@ -304,7 +313,7 @@ def main():
         # NI - Save the gradients in case OOM occurs
         if (iteration+1) % args.save_every == 0:  # not to slow down a lot
 
-            file_path_ = f"cos_matrices/temp_allGrads_episode_upd{UPDATES}_pretrain{PRETRAIN_LAN}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}"
+            file_path_ = f"cos_matrices/temp_allGrads_{args.name}_episode_upd{UPDATES}_pretrain{PRETRAIN_LAN}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}"
             # Delete the last temp file
             for filename in glob.glob(f"{file_path_}*"): # remove the previoustemp grads
                 os.remove(filename) 
@@ -318,7 +327,7 @@ def main():
 
     cos_matrices = np.array(cos_matrices)
     print(f"[INFO]: Saving the similarity matrix with shape {cos_matrices.shape}")
-    np.save(f"cos_matrices/allGrads_episode_upd{UPDATES}_pretrain{PRETRAIN_LAN}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}_cos_mat{EPISODES}", cos_matrices)
+    np.save(f"cos_matrices/allGrads_{args.name}_episode_upd{UPDATES}_pretrain{PRETRAIN_LAN}_suppSize{args.support_set_size}_order{args.language_order}_acc_mode{args.accumulation_mode}_cos_mat{EPISODES}", cos_matrices)
 
     print("Done training ... archiving three models!")
     for i in [EPISODES]:

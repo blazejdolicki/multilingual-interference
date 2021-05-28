@@ -25,8 +25,8 @@ source activate atcs-project
 
 # finetune mBERT model with Hindi data using the vocabulary specified in config (that was created from all exp-mix languages)
 
-#czech-english pair
+#czech-arabic pair
 # python train_meta.py --inner_lr_decoder 5e-04 --inner_lr_bert 5e-05 --meta_lr_decoder 5e-04 --meta_lr_bert 5e-05 --updates 20 --episodes 500 --support_set_size 20 --model_dir logs/bert_finetune_hindi/fine_tuned_hindi/  --pairwise 3 --notaddhindi True --name Czech_Arabic
 
-#czech-arabic pair
+#czech-english pair
 python train_meta.py --inner_lr_decoder 5e-04 --inner_lr_bert 5e-05 --meta_lr_decoder 5e-04 --meta_lr_bert 5e-05 --updates 20 --episodes 500 --support_set_size 20 --model_dir logs/bert_finetune_hindi/fine_tuned_hindi/ --pairwise 4 --notaddhindi True --name Czech_English

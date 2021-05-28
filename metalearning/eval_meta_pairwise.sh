@@ -22,7 +22,7 @@ module load Anaconda3/2018.12
 # Your job starts in the directory where you call sbatch
 
 # Activate your environment
-source activate atcs
+source activate atcs-project
 
 # finetune mBERT model with English data using the vocabulary specified in config (that was created from all exp-mix languages)
 #python train_meta.py --model_dir logs/bert_finetune_en/2021.05.15_11.24.02
